@@ -1,0 +1,287 @@
+{
+  "version": "2",
+  "exportDate": "2026-01-21T17:56:22.714Z",
+  "cars": [
+    {
+      "id": "1769000073628",
+      "number": "123123",
+      "type": "freight",
+      "status": "in-use",
+      "driverId": "1769000769580",
+      "nextService": "2026-01-22"
+    },
+    {
+      "id": "1769001976872",
+      "number": "510452",
+      "type": "freight",
+      "status": "maintenance",
+      "driverId": ""
+    },
+    {
+      "id": "1769002478213",
+      "number": "510110",
+      "type": "inter",
+      "cargo": "mustang",
+      "status": "available",
+      "driverId": "",
+      "nextService": ""
+    }
+  ],
+  "people": [
+    {
+      "id": "1",
+      "name": "אנג'ל אביטן",
+      "idNumber": "8850469",
+      "phone": "050-4869544",
+      "status": "on-base"
+    },
+    {
+      "id": "2",
+      "name": "הבטמו אייאיו ",
+      "idNumber": "7420936",
+      "phone": "054-2230393",
+      "status": "on-base"
+    },
+    {
+      "id": "3",
+      "name": "יצחק אינדלאו",
+      "idNumber": "7538447",
+      "phone": "052-5304625",
+      "status": "on-base"
+    },
+    {
+      "id": "4",
+      "name": "פיראס אל עלי",
+      "idNumber": "8633863",
+      "phone": "052-4788790",
+      "status": "on-base"
+    },
+    {
+      "id": "5",
+      "name": "מולוגטה אלמיהו ",
+      "idNumber": "6626000",
+      "phone": "054-3068404",
+      "status": "on-base"
+    },
+    {
+      "id": "6",
+      "name": "שחר אלמקיס",
+      "idNumber": "8224223",
+      "phone": "050-3997699",
+      "status": "on-base"
+    },
+    {
+      "id": "7",
+      "name": "גברה אנטנך",
+      "idNumber": "8381378",
+      "phone": "053-8212543",
+      "status": "on-base"
+    },
+    {
+      "id": "8",
+      "name": "זוהר ביברמן",
+      "idNumber": "7026184",
+      "phone": "052-6749258",
+      "status": "on-base"
+    },
+    {
+      "id": "9",
+      "name": "עזרא בן אברהם",
+      "idNumber": "5953869",
+      "phone": "053-2226165",
+      "status": "on-base"
+    },
+    {
+      "id": "10",
+      "name": "דניאל בן הרוש",
+      "idNumber": "5873319",
+      "phone": "054-3179788",
+      "status": "on-base"
+    },
+    {
+      "id": "11",
+      "name": "היתם ג'ועיה",
+      "idNumber": "8287754",
+      "phone": "050-5795940",
+      "status": "on-base"
+    },
+    {
+      "id": "12",
+      "name": "ירון גבאי",
+      "idNumber": "8454874",
+      "phone": "054-3423236",
+      "status": "on-base"
+    },
+    {
+      "id": "13",
+      "name": "מיכאל גוסקוב",
+      "idNumber": "5825866",
+      "phone": "054-8341551",
+      "status": "on-base"
+    },
+    {
+      "id": "14",
+      "name": "עידן אנדרס גור",
+      "idNumber": "6191025",
+      "phone": "052-5211961",
+      "status": "on-base"
+    },
+    {
+      "id": "15",
+      "name": "אנטון דישל",
+      "idNumber": "8452744",
+      "phone": "053-5307635",
+      "status": "on-base"
+    },
+    {
+      "id": "16",
+      "name": "אביאל דנוך",
+      "idNumber": "5789051",
+      "phone": "054-4746867",
+      "status": "on-base"
+    },
+    {
+      "id": "17",
+      "name": "נתי דסטה",
+      "idNumber": "5822901",
+      "phone": "054-7366937",
+      "status": "on-base"
+    },
+    {
+      "id": "18",
+      "name": "באסל חניפס",
+      "idNumber": "8510000",
+      "phone": "052-5148683",
+      "status": "on-base"
+    },
+    {
+      "id": "19",
+      "name": "חאדר חבקה",
+      "idNumber": "8589461",
+      "phone": "052-5496067",
+      "status": "on-base"
+    },
+    {
+      "id": "20",
+      "name": "אניל חוסין",
+      "idNumber": "8478415",
+      "phone": "052-6242089",
+      "status": "on-base"
+    },
+    {
+      "id": "21",
+      "name": "טגניה טשומה",
+      "idNumber": "5490326",
+      "phone": "054-2388342",
+      "status": "on-base"
+    },
+    {
+      "id": "22",
+      "name": "פנחס כהן",
+      "idNumber": "6119213",
+      "phone": "054-4338572",
+      "status": "on-base"
+    },
+    {
+      "id": "23",
+      "name": "אלון לוי",
+      "idNumber": "7433843",
+      "phone": "050-7319266",
+      "status": "on-base"
+    },
+    {
+      "id": "24",
+      "name": "יבגני לוקטוקוב",
+      "idNumber": "7161108",
+      "phone": "052-7011676",
+      "status": "on-base"
+    },
+    {
+      "id": "25",
+      "name": "מיכאל לרמן",
+      "idNumber": "5242481",
+      "phone": "052-4661656",
+      "status": "on-base"
+    },
+    {
+      "id": "26",
+      "name": "רביד מלכא",
+      "idNumber": "7452451",
+      "phone": "054-4559549",
+      "status": "on-base"
+    },
+    {
+      "id": "27",
+      "name": "זיו מנור",
+      "idNumber": "5387463",
+      "phone": "054-7797132",
+      "status": "on-base"
+    },
+    {
+      "id": "28",
+      "name": "נתן מריאמס",
+      "idNumber": "8152591",
+      "phone": "050-5775089",
+      "status": "on-base"
+    },
+    {
+      "id": "29",
+      "name": "ברוך נגה",
+      "idNumber": "8138496",
+      "phone": "054-3470879",
+      "status": "on-base"
+    },
+    {
+      "id": "30",
+      "name": "דמיטרי סמירנוף",
+      "idNumber": "8451296",
+      "phone": "053-5322705",
+      "status": "on-base"
+    },
+    {
+      "id": "31",
+      "name": "ח'אדר עבוד",
+      "idNumber": "7575896",
+      "phone": "052-5900421",
+      "status": "on-base"
+    },
+    {
+      "id": "32",
+      "name": "עלי עזאם",
+      "idNumber": "8394144",
+      "phone": "054-8743204",
+      "status": "on-base"
+    },
+    {
+      "id": "33",
+      "name": "סמיון קלנטרוב",
+      "idNumber": "8382861",
+      "phone": "052-4100692",
+      "status": "on-base"
+    },
+    {
+      "id": "34",
+      "name": "אמיר ראחל",
+      "idNumber": "5490050",
+      "phone": "052-9597715",
+      "status": "on-base"
+    },
+    {
+      "id": "35",
+      "name": "עלי ראחל",
+      "idNumber": "9682604",
+      "phone": "052-8018176",
+      "status": "on-base"
+    },
+    {
+      "id": "1769000769580",
+      "name": "מיכאל מירו",
+      "idNumber": "8001675",
+      "phone": "0545235959",
+      "status": "on-base",
+      "unit": "",
+      "reference": "",
+      "referenceEnd": ""
+    }
+  ]
+}

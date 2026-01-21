@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>פלוגה ב' - מחלקה 3</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <style>
         * {
             margin: 0;
@@ -528,8 +531,9 @@
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
             <h1>פלוגה ב' - מחלקה 3</h1>
             <div class="sync-buttons">
-                <button class="sync-btn export-btn" onclick="exportData()">📤 ייצוא נתונים</button>
-                <button class="sync-btn import-btn" onclick="document.getElementById('import-file').click()">📥 ייבוא נתונים</button>
+                <span id="sync-status" style="padding: 5px 10px; border-radius: 5px; font-size: 12px; color: white; background: gray;">טוען...</span>
+                <button class="sync-btn export-btn" onclick="exportData()">📤 ייצוא</button>
+                <button class="sync-btn import-btn" onclick="document.getElementById('import-file').click()">📥 ייבוא</button>
                 <input type="file" id="import-file" accept=".json" style="display: none;" onchange="importData(event)">
             </div>
         </div>
@@ -808,8 +812,88 @@
             localStorage.setItem('fleet_data_version', DATA_VERSION);
         }
 
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDlHH-T44B7-9KGteM2Fo2mO7Q1j_vOn88",
+            authDomain: "fleet-dashboard-e1c72.firebaseapp.com",
+            databaseURL: "https://fleet-dashboard-e1c72-default-rtdb.firebaseio.com",
+            projectId: "fleet-dashboard-e1c72",
+            storageBucket: "fleet-dashboard-e1c72.firebasestorage.app",
+            messagingSenderId: "48562204954",
+            appId: "1:48562204954:web:4fad6b0c94874f4ea73ca3"
+        };
+
+        // Initialize Firebase
+        let firebaseEnabled = false;
+        let database = null;
+
+        function initFirebase() {
+            try {
+                if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                    firebase.initializeApp(firebaseConfig);
+                    database = firebase.database();
+                    firebaseEnabled = true;
+                    setupFirebaseListeners();
+                    updateSyncStatus('מחובר', 'green');
+                    console.log('Firebase initialized successfully');
+                } else {
+                    updateSyncStatus('לא מוגדר', 'orange');
+                    console.log('Firebase not configured - using localStorage only');
+                }
+            } catch (error) {
+                console.error('Firebase initialization error:', error);
+                updateSyncStatus('שגיאה', 'red');
+            }
+        }
+
+        function updateSyncStatus(text, color) {
+            const statusEl = document.getElementById('sync-status');
+            if (statusEl) {
+                statusEl.textContent = text;
+                statusEl.style.background = color;
+            }
+        }
+
+        function setupFirebaseListeners() {
+            // Listen for cars changes
+            database.ref('cars').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    cars = Object.values(data);
+                    localStorage.setItem('fleet_cars', JSON.stringify(cars));
+                    renderCars();
+                    updateStats();
+                }
+            });
+
+            // Listen for people changes
+            database.ref('people').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    people = Object.values(data);
+                    localStorage.setItem('fleet_people', JSON.stringify(people));
+                    renderPeople();
+                    updateStats();
+                }
+            });
+        }
+
+        function syncToFirebase(collection, data) {
+            if (!firebaseEnabled) return;
+
+            const dataObject = {};
+            data.forEach(item => {
+                dataObject[item.id] = item;
+            });
+
+            database.ref(collection).set(dataObject)
+                .then(() => console.log(`${collection} synced to Firebase`))
+                .catch(error => console.error(`Firebase sync error:`, error));
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
+            initFirebase();
             renderCars();
             renderPeople();
             updateStats();
@@ -886,6 +970,7 @@
             }
 
             localStorage.setItem('fleet_cars', JSON.stringify(cars));
+            syncToFirebase('cars', cars);
             closeModal('car');
             renderCars();
             updateStats();
@@ -911,6 +996,7 @@
             if (confirm('האם אתה בטוח שברצונך למחוק רכב זה?')) {
                 cars = cars.filter(car => car.id !== carId);
                 localStorage.setItem('fleet_cars', JSON.stringify(cars));
+                syncToFirebase('cars', cars);
                 renderCars();
                 updateStats();
             }
@@ -1019,6 +1105,7 @@
             }
 
             localStorage.setItem('fleet_people', JSON.stringify(people));
+            syncToFirebase('people', people);
             closeModal('person');
             renderPeople();
             updateStats();
@@ -1050,9 +1137,11 @@
                     }
                 });
                 localStorage.setItem('fleet_cars', JSON.stringify(cars));
+                syncToFirebase('cars', cars);
 
                 people = people.filter(person => person.id !== personId);
                 localStorage.setItem('fleet_people', JSON.stringify(people));
+                syncToFirebase('people', people);
                 renderPeople();
                 renderCars();
                 updateStats();
