@@ -532,6 +532,7 @@
             <h1>פלוגה ב' - מחלקה 3</h1>
             <div class="sync-buttons">
                 <span id="sync-status" style="padding: 5px 10px; border-radius: 5px; font-size: 12px; color: white; background: gray;">טוען...</span>
+                <button class="sync-btn" style="background: #28a745; color: white;" onclick="syncAllData()">🔄 סנכרן</button>
                 <button class="sync-btn export-btn" onclick="exportData()">📤 ייצוא</button>
                 <button class="sync-btn import-btn" onclick="document.getElementById('import-file').click()">📥 ייבוא</button>
                 <input type="file" id="import-file" accept=".json" style="display: none;" onchange="importData(event)">
@@ -889,6 +890,17 @@
             database.ref(collection).set(dataObject)
                 .then(() => console.log(`${collection} synced to Firebase`))
                 .catch(error => console.error(`Firebase sync error:`, error));
+        }
+
+        function syncAllData() {
+            if (!firebaseEnabled) {
+                alert('Firebase לא מחובר. בדוק את החיבור לאינטרנט.');
+                return;
+            }
+
+            syncToFirebase('cars', cars);
+            syncToFirebase('people', people);
+            alert('כל הנתונים סונכרנו בהצלחה!');
         }
 
         // Initialize
