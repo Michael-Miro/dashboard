@@ -415,7 +415,7 @@
                 width: 100% !important;
             }
 
-            /* Table becomes cards on mobile */
+            /* Table becomes compact cards on mobile */
             .data-table {
                 display: block;
             }
@@ -425,48 +425,61 @@
             }
 
             .data-table tbody {
-                display: block;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
             }
 
             .data-table tr {
                 display: block;
                 background: white;
-                margin-bottom: 15px;
-                border-radius: 10px;
-                padding: 15px;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+                border-radius: 8px;
+                padding: 10px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                flex: 1 1 calc(50% - 4px);
+                min-width: 150px;
+                font-size: 12px;
             }
 
             .data-table td {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                padding: 8px 0;
-                border-bottom: 1px solid #eee;
+                padding: 3px 0;
+                border-bottom: none;
             }
 
             .data-table td:last-child {
-                border-bottom: none;
                 justify-content: center;
-                padding-top: 15px;
+                padding-top: 8px;
+                margin-top: 5px;
+                border-top: 1px solid #eee;
             }
 
             .data-table td::before {
                 content: attr(data-label);
                 font-weight: 600;
                 color: #1e3a5f;
-                margin-left: 10px;
+                margin-left: 5px;
+                font-size: 11px;
+            }
+
+            .status-badge {
+                font-size: 10px;
+                padding: 2px 6px;
             }
 
             .action-buttons {
                 width: 100%;
                 justify-content: center;
+                gap: 5px;
             }
 
             .btn-edit, .btn-delete {
                 flex: 1;
                 text-align: center;
-                padding: 10px;
+                padding: 6px 8px;
+                font-size: 11px;
             }
 
             .modal-content {
@@ -533,9 +546,6 @@
             <div class="sync-buttons">
                 <span id="sync-status" style="padding: 5px 10px; border-radius: 5px; font-size: 12px; color: white; background: gray;">טוען...</span>
                 <button class="sync-btn" style="background: #28a745; color: white;" onclick="syncAllData()">🔄 סנכרן</button>
-                <button class="sync-btn export-btn" onclick="exportData()">📤 ייצוא</button>
-                <button class="sync-btn import-btn" onclick="document.getElementById('import-file').click()">📥 ייבוא</button>
-                <input type="file" id="import-file" accept=".json" style="display: none;" onchange="importData(event)">
             </div>
         </div>
     </header>
