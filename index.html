@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>פלוגה ב' - מחלקה 3</title>
+
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
     <style>
         * {
             margin: 0;
@@ -130,6 +132,11 @@
 
         .data-table tr:last-child td {
             border-bottom: none;
+        }
+
+        /* Make rows clearly clickable for view mode */
+        .clickable-row {
+            cursor: pointer;
         }
 
         .status-badge {
@@ -345,6 +352,16 @@
             color: #333;
         }
 
+        /* UX #5: highlight next service dates */
+        .next-service-overdue {
+            font-weight: 700;
+            color: #dc3545;
+        }
+        .next-service-soon {
+            font-weight: 600;
+            color: #856404;
+        }
+
         /* Mobile Responsive Styles */
         @media (max-width: 768px) {
             .header {
@@ -490,9 +507,6 @@
             }
 
             .btn-edit, .btn-delete {
-                padding: 5px 10px;
-                font-size: 12px;
-                text-align: center;
                 padding: 6px 8px;
                 font-size: 11px;
             }
@@ -512,6 +526,7 @@
             .sync-buttons {
                 flex-direction: column;
                 gap: 5px;
+                align-items: flex-start;
             }
 
             .sync-btn {
@@ -523,6 +538,7 @@
         .sync-buttons {
             display: flex;
             gap: 10px;
+            align-items: center;
         }
 
         .sync-btn {
@@ -534,692 +550,848 @@
             transition: all 0.3s ease;
             font-weight: 500;
         }
-
-        .export-btn {
-            background: #17a2b8;
-            color: white;
-        }
-
-        .export-btn:hover {
-            background: #138496;
-        }
-
-        .import-btn {
-            background: #ffc107;
-            color: #212529;
-        }
-
-        .import-btn:hover {
-            background: #e0a800;
-        }
     </style>
 </head>
+
 <body>
-    <header class="header">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-            <h1>פלוגה ב' - מחלקה 3</h1>
-            <div class="sync-buttons">
-                <span id="sync-status" style="padding: 5px 10px; border-radius: 5px; font-size: 12px; color: white; background: gray;">טוען...</span>
-                <button class="sync-btn" style="background: #28a745; color: white;" onclick="syncAllData()">🔄 סנכרן</button>
-            </div>
-        </div>
-    </header>
-
-    <nav class="tabs">
-        <button class="tab-button active" data-tab="cars">🚙 רכבים</button>
-        <button class="tab-button" data-tab="people">👥 אנשים</button>
-    </nav>
-
-    <main class="container">
-        <!-- Cars Tab -->
-        <div id="cars" class="tab-content active">
-            <div class="stats-bar">
-                <div class="stat-card">
-                    <h3>סה"כ רכבים</h3>
-                    <div class="number" id="total-cars">0</div>
-                </div>
-                <div class="stat-card">
-                    <h3>זמינים</h3>
-                    <div class="number" id="available-cars">0</div>
-                </div>
-                <div class="stat-card">
-                    <h3>בשימוש</h3>
-                    <div class="number" id="inuse-cars">0</div>
-                </div>
-                <div class="stat-card">
-                    <h3>בתחזוקה</h3>
-                    <div class="number" id="maintenance-cars">0</div>
-                </div>
-                <div class="stat-card">
-                    <h3>מדורג</h3>
-                    <div class="number" id="graded-cars">0</div>
-                </div>
-            </div>
-
-            <div class="actions-bar">
-                <button class="add-button" onclick="openModal('car')">+ הוסף רכב</button>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <select id="filter-car-type" class="search-box" style="width: 120px;" onchange="filterCars()">
-                        <option value="">כל הסוגים</option>
-                        <option value="freight">פרייט</option>
-                        <option value="inter">אינטר</option>
-                    </select>
-                    <select id="filter-car-cargo" class="search-box" style="width: 120px;" onchange="filterCars()">
-                        <option value="">כל המשאות</option>
-                        <option value="cover">כיסוי</option>
-                        <option value="mustang">מוסטנג</option>
-                    </select>
-                    <select id="filter-car-status" class="search-box" style="width: 120px;" onchange="filterCars()">
-                        <option value="">כל הסטטוסים</option>
-                        <option value="available">זמין</option>
-                        <option value="in-use">בשימוש</option>
-                        <option value="maintenance">בתחזוקה</option>
-                        <option value="graded">מדורג</option>
-                    </select>
-                    <input type="text" class="search-box" placeholder="חיפוש רכב..." id="search-cars" oninput="filterCars()">
-                </div>
-            </div>
-
-            <table class="data-table" id="cars-table">
-                <thead>
-                    <tr>
-                        <th>צ'</th>
-                        <th>סוג</th>
-                        <th>משא</th>
-                        <th>סטטוס</th>
-                        <th>נהג משויך</th>
-                        <th>תאריך טיפול הבא</th>
-                        <th>פעולות</th>
-                    </tr>
-                </thead>
-                <tbody id="cars-body">
-                </tbody>
-            </table>
-        </div>
-
-        <!-- People Tab -->
-        <div id="people" class="tab-content">
-            <div class="stats-bar">
-                <div class="stat-card">
-                    <h3>סה"כ אנשים</h3>
-                    <div class="number" id="total-people">0</div>
-                </div>
-                <div class="stat-card">
-                    <h3>בבסיס</h3>
-                    <div class="number" id="people-on-base">0</div>
-                </div>
-                <div class="stat-card">
-                    <h3>במחלה</h3>
-                    <div class="number" id="people-sick">0</div>
-                </div>
-                <div class="stat-card">
-                    <h3>ברענון</h3>
-                    <div class="number" id="people-refresher">0</div>
-                </div>
-                <div class="stat-card">
-                    <h3>בעבודה</h3>
-                    <div class="number" id="people-working">0</div>
-                </div>
-            </div>
-
-            <div class="actions-bar">
-                <button class="add-button" onclick="openModal('person')">+ הוסף אדם</button>
-                <input type="text" class="search-box" placeholder="חיפוש אדם..." id="search-people" oninput="filterTable('people')">
-            </div>
-
-            <table class="data-table" id="people-table">
-                <thead>
-                    <tr>
-                        <th>שם מלא</th>
-                        <th>מספר אישי</th>
-                        <th>טלפון</th>
-                        <th>סטטוס</th>
-                        <th>יחידה / בסיס</th>
-                        <th>מספר אסמכתא</th>
-                        <th>סיום אסמכתא</th>
-                        <th>פעולות</th>
-                    </tr>
-                </thead>
-                <tbody id="people-body">
-                </tbody>
-            </table>
-        </div>
-    </main>
-
-    <!-- Car Modal -->
-    <div class="modal" id="car-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="car-modal-title">הוסף רכב חדש</h2>
-                <button class="close-button" onclick="closeModal('car')">&times;</button>
-            </div>
-            <form id="car-form" onsubmit="saveCar(event)">
-                <input type="hidden" id="car-id">
-                <div class="form-group">
-                    <label>צ'</label>
-                    <input type="text" id="car-number" required placeholder="מספר צ'">
-                </div>
-                <div class="form-group">
-                    <label>סוג</label>
-                    <select id="car-type" required>
-                        <option value="freight">פרייט</option>
-                        <option value="inter">אינטר</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>משא</label>
-                    <select id="car-cargo" required>
-                        <option value="cover">כיסוי</option>
-                        <option value="mustang">מוסטנג</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>סטטוס</label>
-                    <select id="car-status" required>
-                        <option value="available">זמין</option>
-                        <option value="in-use">בשימוש</option>
-                        <option value="maintenance">בתחזוקה</option>
-                        <option value="graded">מדורג</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>נהג משויך</label>
-                    <select id="car-driver">
-                        <option value="">ללא נהג משויך</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>תאריך טיפול הבא</label>
-                    <input type="date" id="car-next-service">
-                </div>
-                <button type="submit" class="submit-button">שמור</button>
-            </form>
+<header class="header">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <h1>פלוגה ב' - מחלקה 3</h1>
+        <div class="sync-buttons">
+            <span id="sync-status" style="padding: 5px 10px; border-radius: 5px; font-size: 12px; color: white; background: gray;">טוען...</span>
+            <button class="sync-btn" style="background: #28a745; color: white;" onclick="syncAllData()">🔄 סנכרן</button>
         </div>
     </div>
+</header>
 
-    <!-- Person Modal -->
-    <div class="modal" id="person-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="person-modal-title">הוסף אדם חדש</h2>
-                <button class="close-button" onclick="closeModal('person')">&times;</button>
+<nav class="tabs">
+    <button class="tab-button active" data-tab="cars">🚙 רכבים</button>
+    <button class="tab-button" data-tab="people">👥 אנשים</button>
+</nav>
+
+<main class="container">
+    <!-- Cars Tab -->
+    <div id="cars" class="tab-content active">
+        <div class="stats-bar">
+            <div class="stat-card">
+                <h3>סה"כ רכבים</h3>
+                <div class="number" id="total-cars">0</div>
             </div>
-            <form id="person-form" onsubmit="savePerson(event)">
-                <input type="hidden" id="person-id">
-                <div class="form-group">
-                    <label>שם מלא</label>
-                    <input type="text" id="person-name" required placeholder="שם פרטי ומשפחה">
-                </div>
-                <div class="form-group">
-                    <label>מספר אישי</label>
-                    <input type="text" id="person-id-number" required placeholder="מספר אישי">
-                </div>
-                <div class="form-group">
-                    <label>טלפון</label>
-                    <input type="tel" id="person-phone" required placeholder="050-1234567">
-                </div>
-                <div class="form-group">
-                    <label>סטטוס</label>
-                    <select id="person-status" required onchange="toggleWorkFields()">
-                        <option value="on-base">בבסיס</option>
-                        <option value="sick">במחלה</option>
-                        <option value="refresher">רענון</option>
-                        <option value="working">בעבודה</option>
-                    </select>
-                </div>
-                <div class="work-fields" id="work-fields">
-                    <div class="form-group">
-                        <label>יחידה / בסיס</label>
-                        <input type="text" id="person-unit" placeholder="שם היחידה או הבסיס">
-                    </div>
-                    <div class="form-group">
-                        <label>מספר אסמכתא</label>
-                        <input type="text" id="person-reference" placeholder="מספר אסמכתא">
-                    </div>
-                    <div class="form-group">
-                        <label>סיום אסמכתא</label>
-                        <input type="date" id="person-reference-end">
-                    </div>
-                </div>
-                <button type="submit" class="submit-button">שמור</button>
-            </form>
+            <div class="stat-card">
+                <h3>זמינים</h3>
+                <div class="number" id="available-cars">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>בשימוש</h3>
+                <div class="number" id="inuse-cars">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>בתחזוקה</h3>
+                <div class="number" id="maintenance-cars">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>מדורג</h3>
+                <div class="number" id="graded-cars">0</div>
+            </div>
         </div>
+
+        <div class="actions-bar">
+            <button class="add-button" onclick="openModal('car')">+ הוסף רכב</button>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <select id="filter-car-type" class="search-box" style="width: 120px;" onchange="filterCars()">
+                    <option value="">כל הסוגים</option>
+                    <option value="freight">פרייט</option>
+                    <option value="inter">אינטר</option>
+                </select>
+
+                <select id="filter-car-cargo" class="search-box" style="width: 120px;" onchange="filterCars()">
+                    <option value="">כל המשאות</option>
+                    <option value="cover">כיסוי</option>
+                    <option value="mustang">מוסטנג</option>
+                </select>
+
+                <select id="filter-car-status" class="search-box" style="width: 120px;" onchange="filterCars()">
+                    <option value="">כל הסטטוסים</option>
+                    <option value="available">זמין</option>
+                    <option value="in-use">בשימוש</option>
+                    <option value="maintenance">בתחזוקה</option>
+                    <option value="graded">מדורג</option>
+                </select>
+
+                <input type="text" class="search-box" placeholder="חיפוש רכב..." id="search-cars" oninput="filterCars()">
+            </div>
+        </div>
+
+        <table class="data-table" id="cars-table">
+            <thead>
+            <tr>
+                <th>צ'</th>
+                <th>סוג</th>
+                <th>משא</th>
+                <th>סטטוס</th>
+                <th>נהג משויך</th>
+                <th>תאריך טיפול הבא</th>
+                <th>פעולות</th>
+            </tr>
+            </thead>
+            <tbody id="cars-body"></tbody>
+        </table>
     </div>
 
-    <script>
-        // Initial People Data from images
-        const initialPeopleData = [
-            { id: '1', name: 'אנג\'ל אביבן', idNumber: '8850469', phone: '050-4869544', status: 'on-base' },
-            { id: '2', name: 'הבסמו איאין', idNumber: '7420936', phone: '054-2230393', status: 'on-base' },
-            { id: '3', name: 'יצחק אילדלאו', idNumber: '7538447', phone: '052-5304625', status: 'on-base' },
-            { id: '4', name: 'פיראס אל עלי', idNumber: '8633863', phone: '052-4788790', status: 'on-base' },
-            { id: '5', name: 'מולוגטה אלמיתהו', idNumber: '6626000', phone: '054-3068404', status: 'on-base' },
-            { id: '6', name: 'שהר אלמקיס', idNumber: '8224223', phone: '050-3997699', status: 'on-base' },
-            { id: '7', name: 'גברה אנטנך', idNumber: '8381378', phone: '053-8212543', status: 'on-base' },
-            { id: '8', name: 'זוהר ביברמן', idNumber: '7026184', phone: '052-6749258', status: 'on-base' },
-            { id: '9', name: 'עזרא בן אברהם', idNumber: '5953869', phone: '053-2226165', status: 'on-base' },
-            { id: '10', name: 'דניאל בן הרוש', idNumber: '5873319', phone: '054-3179788', status: 'on-base' },
-            { id: '11', name: 'איתם ג\'וניעה', idNumber: '8287754', phone: '050-5795940', status: 'on-base' },
-            { id: '12', name: 'ירון גבאי', idNumber: '8454874', phone: '054-3423236', status: 'on-base' },
-            { id: '13', name: 'מיכאל גטסקוב', idNumber: '5825866', phone: '054-8341551', status: 'on-base' },
-            { id: '14', name: 'עידן אנדרס גור', idNumber: '6191025', phone: '052-5211961', status: 'on-base' },
-            { id: '15', name: 'אנטון דישל', idNumber: '8452744', phone: '053-5307635', status: 'on-base' },
-            { id: '16', name: 'אביאל דנך', idNumber: '5789051', phone: '054-4746867', status: 'on-base' },
-            { id: '17', name: 'נתי גצ\'יאו דפסה', idNumber: '5822901', phone: '054-7366937', status: 'on-base' },
-            { id: '18', name: 'באסל חניפס', idNumber: '8510000', phone: '052-5148683', status: 'on-base' },
-            { id: '19', name: 'חאדר חנקה', idNumber: '8589461', phone: '052-5496067', status: 'on-base' },
-            { id: '20', name: 'אניל חוסין', idNumber: '8478415', phone: '052-6242089', status: 'on-base' },
-            { id: '21', name: 'נשומה טגוניה', idNumber: '5490326', phone: '054-2388342', status: 'on-base' },
-            { id: '22', name: 'פנחס כהן', idNumber: '6119213', phone: '054-4338572', status: 'on-base' },
-            { id: '23', name: 'אלון לוי', idNumber: '7433843', phone: '050-7319266', status: 'on-base' },
-            { id: '24', name: 'יבגני לזווקוב', idNumber: '7161108', phone: '052-7011676', status: 'on-base' },
-            { id: '25', name: 'מיכאל לרמן', idNumber: '5242481', phone: '052-4661656', status: 'on-base' },
-            { id: '26', name: 'רביד מלכא', idNumber: '7452451', phone: '054-4559549', status: 'on-base' },
-            { id: '27', name: 'וון מנור', idNumber: '5387463', phone: '054-7797132', status: 'on-base' },
-            { id: '28', name: 'נתן מראגמס', idNumber: '8152591', phone: '050-5775089', status: 'on-base' },
-            { id: '29', name: 'ברוך נגה', idNumber: '8138496', phone: '054-3470879', status: 'on-base' },
-            { id: '30', name: 'דמיטרי סטירובב', idNumber: '8451296', phone: '053-5322705', status: 'on-base' },
-            { id: '31', name: 'חיידר עבוד', idNumber: '7575896', phone: '052-5900421', status: 'on-base' },
-            { id: '32', name: 'עלי עוזם', idNumber: '8394144', phone: '054-8743204', status: 'on-base' },
-            { id: '33', name: 'סמיון קלנטרוב', idNumber: '8382861', phone: '052-4100692', status: 'on-base' },
-            { id: '34', name: 'אמיר ראחל', idNumber: '5490050', phone: '052-9597715', status: 'on-base' },
-            { id: '35', name: 'עלי ראחל', idNumber: '9682604', phone: '052-8018176', status: 'on-base' }
-        ];
+    <!-- People Tab -->
+    <div id="people" class="tab-content">
+        <div class="stats-bar">
+            <div class="stat-card">
+                <h3>סה"כ אנשים</h3>
+                <div class="number" id="total-people">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>בבסיס</h3>
+                <div class="number" id="people-on-base">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>במחלה</h3>
+                <div class="number" id="people-sick">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>ברענון</h3>
+                <div class="number" id="people-refresher">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>בעבודה</h3>
+                <div class="number" id="people-working">0</div>
+            </div>
+        </div>
 
-        // Data Storage
-        let cars = JSON.parse(localStorage.getItem('fleet_cars')) || [];
-        let people = JSON.parse(localStorage.getItem('fleet_people')) || [];
+        <div class="actions-bar">
+            <button class="add-button" onclick="openModal('person')">+ הוסף אדם</button>
+            <input type="text" class="search-box" placeholder="חיפוש אדם..." id="search-people" oninput="filterTable('people')">
+        </div>
 
-        // Load initial data only if empty or if data version changed
-        const DATA_VERSION = '2';
-        if (people.length === 0 || localStorage.getItem('fleet_data_version') !== DATA_VERSION) {
-            people = initialPeopleData;
-            localStorage.setItem('fleet_people', JSON.stringify(people));
-            localStorage.setItem('fleet_data_version', DATA_VERSION);
-        }
+        <table class="data-table" id="people-table">
+            <thead>
+            <tr>
+                <th>שם מלא</th>
+                <th>מספר אישי</th>
+                <th>טלפון</th>
+                <th>סטטוס</th>
+                <th>יחידה / בסיס</th>
+                <th>מספר אסמכתא</th>
+                <th>סיום אסמכתא</th>
+                <th>פעולות</th>
+            </tr>
+            </thead>
+            <tbody id="people-body"></tbody>
+        </table>
+    </div>
+</main>
 
-        // Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyDlHH-T44B7-9KGteM2Fo2mO7Q1j_vOn88",
-            authDomain: "fleet-dashboard-e1c72.firebaseapp.com",
-            databaseURL: "https://fleet-dashboard-e1c72-default-rtdb.firebaseio.com",
-            projectId: "fleet-dashboard-e1c72",
-            storageBucket: "fleet-dashboard-e1c72.firebasestorage.app",
-            messagingSenderId: "48562204954",
-            appId: "1:48562204954:web:4fad6b0c94874f4ea73ca3"
-        };
+<!-- Car Modal -->
+<div class="modal" id="car-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="car-modal-title">הוסף רכב חדש</h2>
+            <button class="close-button" onclick="closeModal('car')">&times;</button>
+        </div>
+        <form id="car-form" onsubmit="saveCar(event)">
+            <input type="hidden" id="car-id">
+            <div class="form-group">
+                <label>צ'</label>
+                <input type="text" id="car-number" required placeholder="מספר צ'">
+            </div>
+            <div class="form-group">
+                <label>סוג</label>
+                <select id="car-type" required>
+                    <option value="freight">פרייט</option>
+                    <option value="inter">אינטר</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>משא</label>
+                <select id="car-cargo" required>
+                    <option value="cover">כיסוי</option>
+                    <option value="mustang">מוסטנג</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>סטטוס</label>
+                <select id="car-status" required>
+                    <option value="available">זמין</option>
+                    <option value="in-use">בשימוש</option>
+                    <option value="maintenance">בתחזוקה</option>
+                    <option value="graded">מדורג</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>נהג משויך</label>
+                <select id="car-driver">
+                    <option value="">ללא נהג משויך</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>תאריך טיפול הבא</label>
+                <input type="date" id="car-next-service">
+            </div>
+            <button type="submit" class="submit-button">שמור</button>
+        </form>
+    </div>
+</div>
 
-        // Initialize Firebase
-        let firebaseEnabled = false;
-        let database = null;
+<!-- Person Modal -->
+<div class="modal" id="person-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="person-modal-title">הוסף אדם חדש</h2>
+            <button class="close-button" onclick="closeModal('person')">&times;</button>
+        </div>
+        <form id="person-form" onsubmit="savePerson(event)">
+            <input type="hidden" id="person-id">
+            <div class="form-group">
+                <label>שם מלא</label>
+                <input type="text" id="person-name" required placeholder="שם פרטי ומשפחה">
+            </div>
+            <div class="form-group">
+                <label>מספר אישי</label>
+                <input type="text" id="person-id-number" required placeholder="מספר אישי">
+            </div>
+            <div class="form-group">
+                <label>טלפון</label>
+                <input type="tel" id="person-phone" required placeholder="050-1234567">
+            </div>
+            <div class="form-group">
+                <label>סטטוס</label>
+                <select id="person-status" required onchange="toggleWorkFields()">
+                    <option value="on-base">בבסיס</option>
+                    <option value="sick">במחלה</option>
+                    <option value="refresher">רענון</option>
+                    <option value="working">בעבודה</option>
+                </select>
+            </div>
+            <div class="work-fields" id="work-fields">
+                <div class="form-group">
+                    <label>יחידה / בסיס</label>
+                    <input type="text" id="person-unit" placeholder="שם היחידה או הבסיס">
+                </div>
+                <div class="form-group">
+                    <label>מספר אסמכתא</label>
+                    <input type="text" id="person-reference" placeholder="מספר אסמכתא">
+                </div>
+                <div class="form-group">
+                    <label>סיום אסמכתא</label>
+                    <input type="date" id="person-reference-end">
+                </div>
+            </div>
+            <button type="submit" class="submit-button">שמור</button>
+        </form>
+    </div>
+</div>
 
-        function initFirebase() {
-            try {
-                if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
-                    firebase.initializeApp(firebaseConfig);
-                    database = firebase.database();
-                    firebaseEnabled = true;
-                    setupFirebaseListeners();
-                    updateSyncStatus('מחובר', 'green');
-                    console.log('Firebase initialized successfully');
-                } else {
-                    updateSyncStatus('לא מוגדר', 'orange');
-                    console.log('Firebase not configured - using localStorage only');
-                }
-            } catch (error) {
-                console.error('Firebase initialization error:', error);
-                updateSyncStatus('שגיאה', 'red');
+<script>
+    // Initial People Data
+    const initialPeopleData = [
+        { id: '1', name: 'אנג\'ל אביבן', idNumber: '8850469', phone: '050-4869544', status: 'on-base' },
+        { id: '2', name: 'הבסמו איאין', idNumber: '7420936', phone: '054-2230393', status: 'on-base' },
+        { id: '3', name: 'יצחק אילדלאו', idNumber: '7538447', phone: '052-5304625', status: 'on-base' },
+        { id: '4', name: 'פיראס אל עלי', idNumber: '8633863', phone: '052-4788790', status: 'on-base' },
+        { id: '5', name: 'מולוגטה אלמיתהו', idNumber: '6626000', phone: '054-3068404', status: 'on-base' },
+        { id: '6', name: 'שהר אלמקיס', idNumber: '8224223', phone: '050-3997699', status: 'on-base' },
+        { id: '7', name: 'גברה אנטנך', idNumber: '8381378', phone: '053-8212543', status: 'on-base' },
+        { id: '8', name: 'זוהר ביברמן', idNumber: '7026184', phone: '052-6749258', status: 'on-base' },
+        { id: '9', name: 'עזרא בן אברהם', idNumber: '5953869', phone: '053-2226165', status: 'on-base' },
+        { id: '10', name: 'דניאל בן הרוש', idNumber: '5873319', phone: '054-3179788', status: 'on-base' },
+        { id: '11', name: 'איתם ג\'וניעה', idNumber: '8287754', phone: '050-5795940', status: 'on-base' },
+        { id: '12', name: 'ירון גבאי', idNumber: '8454874', phone: '054-3423236', status: 'on-base' },
+        { id: '13', name: 'מיכאל גטסקוב', idNumber: '5825866', phone: '054-8341551', status: 'on-base' },
+        { id: '14', name: 'עידן אנדרס גור', idNumber: '6191025', phone: '052-5211961', status: 'on-base' },
+        { id: '15', name: 'אנטון דישל', idNumber: '8452744', phone: '053-5307635', status: 'on-base' },
+        { id: '16', name: 'אביאל דנך', idNumber: '5789051', phone: '054-4746867', status: 'on-base' },
+        { id: '17', name: 'נתי גצ\'יאו דפסה', idNumber: '5822901', phone: '054-7366937', status: 'on-base' },
+        { id: '18', name: 'באסל חניפס', idNumber: '8510000', phone: '052-5148683', status: 'on-base' },
+        { id: '19', name: 'חאדר חנקה', idNumber: '8589461', phone: '052-5496067', status: 'on-base' },
+        { id: '20', name: 'אניל חוסין', idNumber: '8478415', phone: '052-6242089', status: 'on-base' },
+        { id: '21', name: 'נשומה טגוניה', idNumber: '5490326', phone: '054-2388342', status: 'on-base' },
+        { id: '22', name: 'פנחס כהן', idNumber: '6119213', phone: '054-4338572', status: 'on-base' },
+        { id: '23', name: 'אלון לוי', idNumber: '7433843', phone: '050-7319266', status: 'on-base' },
+        { id: '24', name: 'יבגני לזווקוב', idNumber: '7161108', phone: '052-7011676', status: 'on-base' },
+        { id: '25', name: 'מיכאל לרמן', idNumber: '5242481', phone: '052-4661656', status: 'on-base' },
+        { id: '26', name: 'רביד מלכא', idNumber: '7452451', phone: '054-4559549', status: 'on-base' },
+        { id: '27', name: 'וון מנור', idNumber: '5387463', phone: '054-7797132', status: 'on-base' },
+        { id: '28', name: 'נתן מראגמס', idNumber: '8152591', phone: '050-5775089', status: 'on-base' },
+        { id: '29', name: 'ברוך נגה', idNumber: '8138496', phone: '054-3470879', status: 'on-base' },
+        { id: '30', name: 'דמיטרי סטירובב', idNumber: '8451296', phone: '053-5322705', status: 'on-base' },
+        { id: '31', name: 'חיידר עבוד', idNumber: '7575896', phone: '052-5900421', status: 'on-base' },
+        { id: '32', name: 'עלי עוזם', idNumber: '8394144', phone: '054-8743204', status: 'on-base' },
+        { id: '33', name: 'סמיון קלנטרוב', idNumber: '8382861', phone: '052-4100692', status: 'on-base' },
+        { id: '34', name: 'אמיר ראחל', idNumber: '5490050', phone: '052-9597715', status: 'on-base' },
+        { id: '35', name: 'עלי ראחל', idNumber: '9682604', phone: '052-8018176', status: 'on-base' }
+    ];
+
+    // Data Storage
+    let cars = JSON.parse(localStorage.getItem('fleet_cars')) || [];
+    let people = JSON.parse(localStorage.getItem('fleet_people')) || [];
+
+    // Fix "bug 2": do NOT overwrite people/cars on version mismatch.
+    // Only seed people if empty.
+    const DATA_VERSION = '3';
+    const storedVersion = localStorage.getItem('fleet_data_version');
+
+    if (people.length === 0) {
+        people = initialPeopleData;
+        localStorage.setItem('fleet_people', JSON.stringify(people));
+    }
+    if (storedVersion !== DATA_VERSION) {
+        localStorage.setItem('fleet_data_version', DATA_VERSION);
+    }
+
+    // Firebase Configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyDlHH-T44B7-9KGteM2Fo2mO7Q1j_vOn88",
+        authDomain: "fleet-dashboard-e1c72.firebaseapp.com",
+        databaseURL: "https://fleet-dashboard-e1c72-default-rtdb.firebaseio.com",
+        projectId: "fleet-dashboard-e1c72",
+        storageBucket: "fleet-dashboard-e1c72.firebasestorage.app",
+        messagingSenderId: "48562204954",
+        appId: "1:48562204954:web:4fad6b0c94874f4ea73ca3"
+    };
+
+    // Initialize Firebase
+    let firebaseEnabled = false;
+    let database = null;
+
+    function initFirebase() {
+        try {
+            if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                firebase.initializeApp(firebaseConfig);
+                database = firebase.database();
+                firebaseEnabled = true;
+                setupFirebaseListeners();
+                updateSyncStatus('מחובר', 'green');
+                console.log('Firebase initialized successfully');
+            } else {
+                updateSyncStatus('לא מוגדר', 'orange');
+                console.log('Firebase not configured - using localStorage only');
             }
+        } catch (error) {
+            console.error('Firebase initialization error:', error);
+            updateSyncStatus('שגיאה', 'red');
         }
+    }
 
-        function updateSyncStatus(text, color) {
-            const statusEl = document.getElementById('sync-status');
-            if (statusEl) {
-                statusEl.textContent = text;
-                statusEl.style.background = color;
+    function updateSyncStatus(text, color) {
+        const statusEl = document.getElementById('sync-status');
+        if (statusEl) {
+            statusEl.textContent = text;
+            statusEl.style.background = color;
+        }
+    }
+
+    function setupFirebaseListeners() {
+        database.ref('cars').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                cars = Object.values(data);
+                localStorage.setItem('fleet_cars', JSON.stringify(cars));
+                renderCars();
+                updateStats();
             }
-        }
-
-        function setupFirebaseListeners() {
-            // Listen for cars changes
-            database.ref('cars').on('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    cars = Object.values(data);
-                    localStorage.setItem('fleet_cars', JSON.stringify(cars));
-                    renderCars();
-                    updateStats();
-                }
-            });
-
-            // Listen for people changes
-            database.ref('people').on('value', (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    people = Object.values(data);
-                    localStorage.setItem('fleet_people', JSON.stringify(people));
-                    renderPeople();
-                    updateStats();
-                }
-            });
-        }
-
-        function syncToFirebase(collection, data) {
-            if (!firebaseEnabled) return;
-
-            const dataObject = {};
-            data.forEach(item => {
-                dataObject[item.id] = item;
-            });
-
-            database.ref(collection).set(dataObject)
-                .then(() => console.log(`${collection} synced to Firebase`))
-                .catch(error => console.error(`Firebase sync error:`, error));
-        }
-
-        function syncAllData() {
-            if (!firebaseEnabled) {
-                alert('Firebase לא מחובר. בדוק את החיבור לאינטרנט.');
-                return;
-            }
-
-            syncToFirebase('cars', cars);
-            syncToFirebase('people', people);
-            alert('כל הנתונים סונכרנו בהצלחה!');
-        }
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            initFirebase();
-            renderCars();
-            renderPeople();
-            updateStats();
-            setupTabs();
         });
 
-        // Tab Navigation
-        function setupTabs() {
-            const tabButtons = document.querySelectorAll('.tab-button');
-            tabButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    tabButtons.forEach(btn => btn.classList.remove('active'));
-                    button.classList.add('active');
+        database.ref('people').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                people = Object.values(data);
+                localStorage.setItem('fleet_people', JSON.stringify(people));
+                renderPeople();
+                renderCars(); // ensure driver names stay updated
+                updateStats();
+            }
+        });
+    }
 
-                    document.querySelectorAll('.tab-content').forEach(content => {
-                        content.classList.remove('active');
-                    });
-                    document.getElementById(button.dataset.tab).classList.add('active');
+    function syncToFirebase(collection, data) {
+        if (!firebaseEnabled) return;
+
+        const dataObject = {};
+        data.forEach(item => {
+            dataObject[item.id] = item;
+        });
+
+        database.ref(collection).set(dataObject)
+            .then(() => console.log(`${collection} synced to Firebase`))
+            .catch(error => console.error(`Firebase sync error:`, error));
+    }
+
+    function syncAllData() {
+        if (!firebaseEnabled) {
+            alert('Firebase לא מחובר. בדוק את החיבור לאינטרנט.');
+            return;
+        }
+        syncToFirebase('cars', cars);
+        syncToFirebase('people', people);
+        alert('כל הנתונים סונכרנו בהצלחה!');
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        initFirebase();
+        renderCars();
+        renderPeople();
+        updateStats();
+        setupTabs();
+    });
+
+    // Tab Navigation
+    function setupTabs() {
+        const tabButtons = document.querySelectorAll('.tab-button');
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
                 });
+                document.getElementById(button.dataset.tab).classList.add('active');
             });
-        }
+        });
+    }
 
-        // Modal Functions
-        function openModal(type) {
-            if (type === 'car') {
-                document.getElementById('car-modal-title').textContent = 'הוסף רכב חדש';
-                document.getElementById('car-form').reset();
-                document.getElementById('car-id').value = '';
-                updateDriverDropdown();
-            } else {
-                document.getElementById('person-modal-title').textContent = 'הוסף אדם חדש';
-                document.getElementById('person-form').reset();
-                document.getElementById('person-id').value = '';
-                document.getElementById('work-fields').classList.remove('active');
+    // ---------- View/Edit helpers ----------
+    function setFormReadonly(formId, readonly) {
+        const form = document.getElementById(formId);
+        if (!form) return;
+        form.querySelectorAll('input, select, textarea').forEach(el => {
+            if (el.type === 'hidden') return;
+            el.disabled = readonly;
+        });
+    }
+
+    function setSubmitVisible(formId, visible) {
+        const form = document.getElementById(formId);
+        if (!form) return;
+        const btn = form.querySelector('button[type="submit"]');
+        if (btn) btn.style.display = visible ? '' : 'none';
+    }
+
+    // UX #5: highlight overdue/soon next service
+    function getNextServiceClass(nextService) {
+        if (!nextService) return '';
+        const d = new Date(nextService + 'T00:00:00');
+        if (isNaN(d.getTime())) return '';
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const diffDays = Math.floor((d - today) / (1000 * 60 * 60 * 24));
+        if (diffDays < 0) return 'next-service-overdue';
+        if (diffDays <= 7) return 'next-service-soon';
+        return '';
+    }
+
+    // Modal Functions
+    function openModal(type) {
+        if (type === 'car') {
+            document.getElementById('car-modal-title').textContent = 'הוסף רכב חדש';
+            document.getElementById('car-form').reset();
+            document.getElementById('car-id').value = '';
+            updateDriverDropdown('');
+            setFormReadonly('car-form', false);
+            setSubmitVisible('car-form', true);
+        } else {
+            document.getElementById('person-modal-title').textContent = 'הוסף אדם חדש';
+            document.getElementById('person-form').reset();
+            document.getElementById('person-id').value = '';
+            document.getElementById('work-fields').classList.remove('active');
+            setFormReadonly('person-form', false);
+            setSubmitVisible('person-form', true);
+        }
+        document.getElementById(type + '-modal').classList.add('active');
+    }
+
+    function closeModal(type) {
+        document.getElementById(type + '-modal').classList.remove('active');
+    }
+
+    // Update driver dropdown (show on-base drivers; also keep current driver visible if not on-base)
+    function updateDriverDropdown(currentDriverId) {
+        const driverSelect = document.getElementById('car-driver');
+        driverSelect.innerHTML = '<option value="">ללא נהג משויך</option>';
+
+        const onBaseDrivers = people.filter(person => (person.status || 'on-base') === 'on-base');
+        const onBaseIds = new Set(onBaseDrivers.map(d => d.id));
+
+        onBaseDrivers.forEach(driver => {
+            driverSelect.innerHTML += `<option value="${driver.id}">${driver.name}</option>`;
+        });
+
+        // If current driver exists but is not on-base, add it so it can be displayed
+        if (currentDriverId && !onBaseIds.has(currentDriverId)) {
+            const p = people.find(x => x.id === currentDriverId);
+            if (p) {
+                driverSelect.innerHTML += `<option value="${p.id}">${p.name} (לא בבסיס)</option>`;
             }
-            document.getElementById(type + '-modal').classList.add('active');
+        }
+    }
+
+    // ---------- Cars ----------
+    function saveCar(event) {
+        event.preventDefault();
+
+        const carId = document.getElementById('car-id').value;
+        const carData = {
+            id: carId || Date.now().toString(),
+            number: document.getElementById('car-number').value,
+            type: document.getElementById('car-type').value,
+            cargo: document.getElementById('car-cargo').value,
+            status: document.getElementById('car-status').value,
+            driverId: document.getElementById('car-driver').value,
+            nextService: document.getElementById('car-next-service').value || ''
+        };
+
+        if (carId) {
+            const index = cars.findIndex(car => car.id === carId);
+            if (index !== -1) cars[index] = carData;
+        } else {
+            cars.push(carData);
         }
 
-        function closeModal(type) {
-            document.getElementById(type + '-modal').classList.remove('active');
-        }
+        localStorage.setItem('fleet_cars', JSON.stringify(cars));
+        syncToFirebase('cars', cars);
+        closeModal('car');
+        renderCars();
+        updateStats();
+    }
 
-        // Update driver dropdown in car form (only show people on base)
-        function updateDriverDropdown() {
-            const driverSelect = document.getElementById('car-driver');
-            driverSelect.innerHTML = '<option value="">ללא נהג משויך</option>';
-            people.filter(person => person.status === 'on-base').forEach(driver => {
-                driverSelect.innerHTML += `<option value="${driver.id}">${driver.name}</option>`;
-            });
-        }
+    // View car when clicking row (read-only)
+    function viewCar(carId) {
+        const car = cars.find(c => c.id === carId);
+        if (!car) return;
 
-        // Car Functions
-        function saveCar(event) {
-            event.preventDefault();
+        document.getElementById('car-modal-title').textContent = 'פרטי רכב';
+        document.getElementById('car-id').value = car.id;
+        document.getElementById('car-number').value = car.number;
+        document.getElementById('car-type').value = car.type || 'freight';
+        document.getElementById('car-cargo').value = car.cargo || 'cover';
+        document.getElementById('car-status').value = car.status || 'available';
+        updateDriverDropdown(car.driverId || '');
+        document.getElementById('car-driver').value = car.driverId || '';
+        document.getElementById('car-next-service').value = car.nextService || '';
 
-            const carId = document.getElementById('car-id').value;
-            const carData = {
-                id: carId || Date.now().toString(),
-                number: document.getElementById('car-number').value,
-                type: document.getElementById('car-type').value,
-                cargo: document.getElementById('car-cargo').value,
-                status: document.getElementById('car-status').value,
-                driverId: document.getElementById('car-driver').value,
-                nextService: document.getElementById('car-next-service').value || ''
-            };
+        setFormReadonly('car-form', true);
+        setSubmitVisible('car-form', false);
+        document.getElementById('car-modal').classList.add('active');
+    }
 
-            if (carId) {
-                const index = cars.findIndex(car => car.id === carId);
-                if (index !== -1) {
-                    cars[index] = carData;
-                }
-            } else {
-                cars.push(carData);
-            }
+    // Edit car (enabled fields + show save)
+    function editCar(carId) {
+        const car = cars.find(c => c.id === carId);
+        if (!car) return;
 
+        document.getElementById('car-modal-title').textContent = 'עריכת רכב';
+        document.getElementById('car-id').value = car.id;
+        document.getElementById('car-number').value = car.number;
+        document.getElementById('car-type').value = car.type || 'freight';
+        document.getElementById('car-cargo').value = car.cargo || 'cover';
+        document.getElementById('car-status').value = car.status || 'available';
+        updateDriverDropdown(car.driverId || '');
+        document.getElementById('car-driver').value = car.driverId || '';
+        document.getElementById('car-next-service').value = car.nextService || '';
+
+        setFormReadonly('car-form', false);
+        setSubmitVisible('car-form', true);
+        document.getElementById('car-modal').classList.add('active');
+    }
+
+    function deleteCar(carId) {
+        if (confirm('האם אתה בטוח שברצונך למחוק רכב זה?')) {
+            cars = cars.filter(car => car.id !== carId);
             localStorage.setItem('fleet_cars', JSON.stringify(cars));
             syncToFirebase('cars', cars);
-            closeModal('car');
             renderCars();
             updateStats();
         }
+    }
 
-        function editCar(carId) {
-            const car = cars.find(c => c.id === carId);
-            if (car) {
-                document.getElementById('car-modal-title').textContent = 'עריכת רכב';
-                document.getElementById('car-id').value = car.id;
-                document.getElementById('car-number').value = car.number;
-                document.getElementById('car-type').value = car.type || 'freight';
-                document.getElementById('car-cargo').value = car.cargo || 'cover';
-                document.getElementById('car-status').value = car.status;
-                updateDriverDropdown();
-                document.getElementById('car-driver').value = car.driverId || '';
-                document.getElementById('car-next-service').value = car.nextService || '';
-                document.getElementById('car-modal').classList.add('active');
-            }
+    function renderCars() {
+        const tbody = document.getElementById('cars-body');
+
+        if (cars.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <h3>אין רכבים במערכת</h3>
+                            <p>לחץ על "הוסף רכב" כדי להתחיל</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            return;
         }
 
-        function deleteCar(carId) {
-            if (confirm('האם אתה בטוח שברצונך למחוק רכב זה?')) {
-                cars = cars.filter(car => car.id !== carId);
-                localStorage.setItem('fleet_cars', JSON.stringify(cars));
-                syncToFirebase('cars', cars);
-                renderCars();
-                updateStats();
-            }
+        const typeNames = { freight: 'פרייט', inter: 'אינטר' };
+        const cargoNames = { cover: 'כיסוי', mustang: 'מוסטנג' };
+
+        const statusClasses = {
+            'available': 'status-available',
+            'in-use': 'status-in-use',
+            'maintenance': 'status-maintenance',
+            'graded': 'status-graded'
+        };
+
+        const statusNames = {
+            'available': 'זמין',
+            'in-use': 'בשימוש',
+            'maintenance': 'בתחזוקה',
+            'graded': 'מדורג'
+        };
+
+        tbody.innerHTML = cars.map(car => {
+            const driver = people.find(p => p.id === car.driverId);
+            const carType = car.type || 'freight';
+            const carCargo = car.cargo || 'cover';
+            const nextServiceClass = getNextServiceClass(car.nextService);
+
+            return `
+                <tr class="clickable-row" onclick="viewCar('${car.id}')">
+                    <td data-label="צ'">${car.number}</td>
+                    <td data-label="סוג">${typeNames[carType]}</td>
+                    <td data-label="משא">${cargoNames[carCargo]}</td>
+                    <td data-label="סטטוס"><span class="status-badge ${statusClasses[car.status]}">${statusNames[car.status]}</span></td>
+                    <td data-label="נהג משויך">${driver ? driver.name : '-'}</td>
+                    <td data-label="טיפול הבא" class="${nextServiceClass}">${car.nextService || '-'}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-edit" onclick="event.stopPropagation(); editCar('${car.id}')">עריכה</button>
+                            <button class="btn-delete" onclick="event.stopPropagation(); deleteCar('${car.id}')">מחיקה</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    // Filter cars by type, cargo, status, and search
+    function filterCars() {
+        const typeFilter = document.getElementById('filter-car-type').value;
+        const cargoFilter = document.getElementById('filter-car-cargo').value;
+        const statusFilter = document.getElementById('filter-car-status').value;
+        const searchValue = document.getElementById('search-cars').value.toLowerCase();
+        const tbody = document.getElementById('cars-body');
+
+        const typeNames = { freight: 'פרייט', inter: 'אינטר' };
+        const cargoNames = { cover: 'כיסוי', mustang: 'מוסטנג' };
+
+        const statusClasses = {
+            'available': 'status-available',
+            'in-use': 'status-in-use',
+            'maintenance': 'status-maintenance',
+            'graded': 'status-graded'
+        };
+
+        const statusNames = {
+            'available': 'זמין',
+            'in-use': 'בשימוש',
+            'maintenance': 'בתחזוקה',
+            'graded': 'מדורג'
+        };
+
+        const filteredCars = cars.filter(car => {
+            const matchesType = !typeFilter || (car.type || 'freight') === typeFilter;
+
+            const carCargo = car.cargo || 'cover';
+            const matchesCargo = !cargoFilter || carCargo === cargoFilter;
+
+            const matchesStatus = !statusFilter || car.status === statusFilter;
+
+            const carType = car.type || 'freight';
+            const driver = people.find(p => p.id === car.driverId);
+
+            const searchText = `${car.number} ${typeNames[carType]} ${cargoNames[carCargo]} ${statusNames[car.status]} ${driver ? driver.name : ''} ${car.nextService || ''}`.toLowerCase();
+            const matchesSearch = !searchValue || searchText.includes(searchValue);
+
+            return matchesType && matchesCargo && matchesStatus && matchesSearch;
+        });
+
+        if (filteredCars.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <h3>לא נמצאו רכבים</h3>
+                            <p>נסה לשנות את הסינון</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            return;
         }
 
-        function renderCars() {
-            const tbody = document.getElementById('cars-body');
+        tbody.innerHTML = filteredCars.map(car => {
+            const driver = people.find(p => p.id === car.driverId);
+            const carType = car.type || 'freight';
+            const carCargo = car.cargo || 'cover';
+            const nextServiceClass = getNextServiceClass(car.nextService);
 
-            if (cars.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="7">
-                            <div class="empty-state">
-                                <h3>אין רכבים במערכת</h3>
-                                <p>לחץ על "הוסף רכב" כדי להתחיל</p>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
+            return `
+                <tr class="clickable-row" onclick="viewCar('${car.id}')">
+                    <td data-label="צ'">${car.number}</td>
+                    <td data-label="סוג">${typeNames[carType]}</td>
+                    <td data-label="משא">${cargoNames[carCargo]}</td>
+                    <td data-label="סטטוס"><span class="status-badge ${statusClasses[car.status]}">${statusNames[car.status]}</span></td>
+                    <td data-label="נהג משויך">${driver ? driver.name : '-'}</td>
+                    <td data-label="טיפול הבא" class="${nextServiceClass}">${car.nextService || '-'}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-edit" onclick="event.stopPropagation(); editCar('${car.id}')">עריכה</button>
+                            <button class="btn-delete" onclick="event.stopPropagation(); deleteCar('${car.id}')">מחיקה</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
 
-            const typeNames = {
-                'freight': 'פרייט',
-                'inter': 'אינטר'
-            };
+    // ---------- People ----------
+    function toggleWorkFields() {
+        const status = document.getElementById('person-status').value;
+        const workFields = document.getElementById('work-fields');
+        if (status === 'working') {
+            workFields.classList.add('active');
+        } else {
+            workFields.classList.remove('active');
+        }
+    }
 
-            const cargoNames = {
-                'cover': 'כיסוי',
-                'mustang': 'מוסטנג'
-            };
+    function savePerson(event) {
+        event.preventDefault();
 
-            const statusClasses = {
-                'available': 'status-available',
-                'in-use': 'status-in-use',
-                'maintenance': 'status-maintenance',
-                'graded': 'status-graded'
-            };
+        const personId = document.getElementById('person-id').value;
+        const status = document.getElementById('person-status').value;
 
-            const statusNames = {
-                'available': 'זמין',
-                'in-use': 'בשימוש',
-                'maintenance': 'בתחזוקה',
-                'graded': 'מדורג'
-            };
+        const personData = {
+            id: personId || Date.now().toString(),
+            name: document.getElementById('person-name').value,
+            idNumber: document.getElementById('person-id-number').value,
+            phone: document.getElementById('person-phone').value,
+            status: status,
+            unit: status === 'working' ? (document.getElementById('person-unit').value || '') : '',
+            reference: status === 'working' ? (document.getElementById('person-reference').value || '') : '',
+            referenceEnd: status === 'working' ? (document.getElementById('person-reference-end').value || '') : ''
+        };
 
-            tbody.innerHTML = cars.map(car => {
-                const driver = people.find(p => p.id === car.driverId);
-                const carType = car.type || 'freight';
-                const carCargo = car.cargo || 'cover';
-
-                return `
-                    <tr>
-                        <td data-label="צ'">${car.number}</td>
-                        <td data-label="סוג">${typeNames[carType]}</td>
-                        <td data-label="משא">${cargoNames[carCargo]}</td>
-                        <td data-label="סטטוס"><span class="status-badge ${statusClasses[car.status]}">${statusNames[car.status]}</span></td>
-                        <td data-label="נהג משויך">${driver ? driver.name : '-'}</td>
-                        <td data-label="טיפול הבא">${car.nextService || '-'}</td>
-                        <td>
-                            <div class="action-buttons">
-                                <button class="btn-edit" onclick="editCar('${car.id}')">עריכה</button>
-                                <button class="btn-delete" onclick="deleteCar('${car.id}')">מחיקה</button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
+        if (personId) {
+            const index = people.findIndex(person => person.id === personId);
+            if (index !== -1) people[index] = personData;
+        } else {
+            people.push(personData);
         }
 
-        // Toggle work fields visibility
-        function toggleWorkFields() {
-            const status = document.getElementById('person-status').value;
-            const workFields = document.getElementById('work-fields');
-            if (status === 'working') {
-                workFields.classList.add('active');
-            } else {
-                workFields.classList.remove('active');
-            }
-        }
+        localStorage.setItem('fleet_people', JSON.stringify(people));
+        syncToFirebase('people', people);
 
-        // Person Functions
-        function savePerson(event) {
-            event.preventDefault();
+        closeModal('person');
+        renderPeople();
+        renderCars();  // update driver display
+        updateStats();
+    }
 
-            const personId = document.getElementById('person-id').value;
-            const status = document.getElementById('person-status').value;
-            const personData = {
-                id: personId || Date.now().toString(),
-                name: document.getElementById('person-name').value,
-                idNumber: document.getElementById('person-id-number').value,
-                phone: document.getElementById('person-phone').value,
-                status: status,
-                unit: status === 'working' ? document.getElementById('person-unit').value || '' : '',
-                reference: status === 'working' ? document.getElementById('person-reference').value || '' : '',
-                referenceEnd: status === 'working' ? document.getElementById('person-reference-end').value || '' : ''
-            };
+    // View person when clicking row (read-only)
+    function viewPerson(personId) {
+        const person = people.find(p => p.id === personId);
+        if (!person) return;
 
-            if (personId) {
-                const index = people.findIndex(person => person.id === personId);
-                if (index !== -1) {
-                    people[index] = personData;
-                }
-            } else {
-                people.push(personData);
-            }
+        document.getElementById('person-modal-title').textContent = 'פרטי אדם';
+        document.getElementById('person-id').value = person.id;
+        document.getElementById('person-name').value = person.name || '';
+        document.getElementById('person-id-number').value = person.idNumber || '';
+        document.getElementById('person-phone').value = person.phone || '';
+        document.getElementById('person-status').value = person.status || 'on-base';
+        document.getElementById('person-unit').value = person.unit || '';
+        document.getElementById('person-reference').value = person.reference || '';
+        document.getElementById('person-reference-end').value = person.referenceEnd || '';
 
+        toggleWorkFields();
+        setFormReadonly('person-form', true);
+        setSubmitVisible('person-form', false);
+        document.getElementById('person-modal').classList.add('active');
+    }
+
+    // Edit person (enabled fields + show save)
+    function editPerson(personId) {
+        const person = people.find(p => p.id === personId);
+        if (!person) return;
+
+        document.getElementById('person-modal-title').textContent = 'עריכת אדם';
+        document.getElementById('person-id').value = person.id;
+        document.getElementById('person-name').value = person.name || '';
+        document.getElementById('person-id-number').value = person.idNumber || '';
+        document.getElementById('person-phone').value = person.phone || '';
+        document.getElementById('person-status').value = person.status || 'on-base';
+        document.getElementById('person-unit').value = person.unit || '';
+        document.getElementById('person-reference').value = person.reference || '';
+        document.getElementById('person-reference-end').value = person.referenceEnd || '';
+
+        toggleWorkFields();
+        setFormReadonly('person-form', false);
+        setSubmitVisible('person-form', true);
+        document.getElementById('person-modal').classList.add('active');
+    }
+
+    function deletePerson(personId) {
+        if (confirm('האם אתה בטוח שברצונך למחוק אדם זה?')) {
+            // Remove driver association from cars
+            cars.forEach(car => {
+                if (car.driverId === personId) car.driverId = '';
+            });
+            localStorage.setItem('fleet_cars', JSON.stringify(cars));
+            syncToFirebase('cars', cars);
+
+            people = people.filter(person => person.id !== personId);
             localStorage.setItem('fleet_people', JSON.stringify(people));
             syncToFirebase('people', people);
-            closeModal('person');
+
             renderPeople();
+            renderCars();
             updateStats();
         }
+    }
 
-        function editPerson(personId) {
-            const person = people.find(p => p.id === personId);
-            if (person) {
-                document.getElementById('person-modal-title').textContent = 'עריכת אדם';
-                document.getElementById('person-id').value = person.id;
-                document.getElementById('person-name').value = person.name;
-                document.getElementById('person-id-number').value = person.idNumber;
-                document.getElementById('person-phone').value = person.phone;
-                document.getElementById('person-status').value = person.status || 'on-base';
-                document.getElementById('person-unit').value = person.unit || '';
-                document.getElementById('person-reference').value = person.reference || '';
-                document.getElementById('person-reference-end').value = person.referenceEnd || '';
-                toggleWorkFields();
-                document.getElementById('person-modal').classList.add('active');
-            }
-        }
+    function renderPeople() {
+        const tbody = document.getElementById('people-body');
 
-        function deletePerson(personId) {
-            if (confirm('האם אתה בטוח שברצונך למחוק אדם זה?')) {
-                // Remove driver association from cars
-                cars.forEach(car => {
-                    if (car.driverId === personId) {
-                        car.driverId = '';
-                    }
-                });
-                localStorage.setItem('fleet_cars', JSON.stringify(cars));
-                syncToFirebase('cars', cars);
-
-                people = people.filter(person => person.id !== personId);
-                localStorage.setItem('fleet_people', JSON.stringify(people));
-                syncToFirebase('people', people);
-                renderPeople();
-                renderCars();
-                updateStats();
-            }
-        }
-
-        function renderPeople() {
-            const tbody = document.getElementById('people-body');
-
-            if (people.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="8">
-                            <div class="empty-state">
-                                <h3>אין אנשים במערכת</h3>
-                                <p>לחץ על "הוסף אדם" כדי להתחיל</p>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            const statusNames = {
-                'on-base': 'בבסיס',
-                'sick': 'במחלה',
-                'refresher': 'רענון',
-                'working': 'בעבודה'
-            };
-
-            const statusClasses = {
-                'on-base': 'status-on-base',
-                'sick': 'status-sick',
-                'refresher': 'status-refresher',
-                'working': 'status-working'
-            };
-
-            tbody.innerHTML = people.map(person => {
-                const personStatus = person.status || 'on-base';
-                return `
+        if (people.length === 0) {
+            tbody.innerHTML = `
                 <tr>
+                    <td colspan="8">
+                        <div class="empty-state">
+                            <h3>אין אנשים במערכת</h3>
+                            <p>לחץ על "הוסף אדם" כדי להתחיל</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        const statusNames = {
+            'on-base': 'בבסיס',
+            'sick': 'במחלה',
+            'refresher': 'רענון',
+            'working': 'בעבודה'
+        };
+
+        const statusClasses = {
+            'on-base': 'status-on-base',
+            'sick': 'status-sick',
+            'refresher': 'status-refresher',
+            'working': 'status-working'
+        };
+
+        tbody.innerHTML = people.map(person => {
+            const personStatus = person.status || 'on-base';
+            return `
+                <tr class="clickable-row" onclick="viewPerson('${person.id}')">
                     <td data-label="שם מלא">${person.name}</td>
                     <td data-label="מספר אישי">${person.idNumber}</td>
                     <td data-label="טלפון">${person.phone}</td>
@@ -1229,190 +1401,48 @@
                     <td data-label="סיום אסמכתא">${person.referenceEnd || '-'}</td>
                     <td>
                         <div class="action-buttons">
-                            <button class="btn-edit" onclick="editPerson('${person.id}')">עריכה</button>
-                            <button class="btn-delete" onclick="deletePerson('${person.id}')">מחיקה</button>
+                            <button class="btn-edit" onclick="event.stopPropagation(); editPerson('${person.id}')">עריכה</button>
+                            <button class="btn-delete" onclick="event.stopPropagation(); deletePerson('${person.id}')">מחיקה</button>
                         </div>
                     </td>
                 </tr>
-            `}).join('');
-        }
+            `;
+        }).join('');
+    }
 
-        // Statistics
-        function updateStats() {
-            document.getElementById('total-cars').textContent = cars.length;
-            document.getElementById('available-cars').textContent = cars.filter(c => c.status === 'available').length;
-            document.getElementById('inuse-cars').textContent = cars.filter(c => c.status === 'in-use').length;
-            document.getElementById('maintenance-cars').textContent = cars.filter(c => c.status === 'maintenance').length;
-            document.getElementById('graded-cars').textContent = cars.filter(c => c.status === 'graded').length;
+    // Statistics
+    function updateStats() {
+        document.getElementById('total-cars').textContent = cars.length;
+        document.getElementById('available-cars').textContent = cars.filter(c => c.status === 'available').length;
+        document.getElementById('inuse-cars').textContent = cars.filter(c => c.status === 'in-use').length;
+        document.getElementById('maintenance-cars').textContent = cars.filter(c => c.status === 'maintenance').length;
+        document.getElementById('graded-cars').textContent = cars.filter(c => c.status === 'graded').length;
 
-            document.getElementById('total-people').textContent = people.length;
-            document.getElementById('people-on-base').textContent = people.filter(p => p.status === 'on-base' || !p.status).length;
-            document.getElementById('people-sick').textContent = people.filter(p => p.status === 'sick').length;
-            document.getElementById('people-refresher').textContent = people.filter(p => p.status === 'refresher').length;
-            document.getElementById('people-working').textContent = people.filter(p => p.status === 'working').length;
-        }
+        document.getElementById('total-people').textContent = people.length;
+        document.getElementById('people-on-base').textContent = people.filter(p => (p.status || 'on-base') === 'on-base').length;
+        document.getElementById('people-sick').textContent = people.filter(p => p.status === 'sick').length;
+        document.getElementById('people-refresher').textContent = people.filter(p => p.status === 'refresher').length;
+        document.getElementById('people-working').textContent = people.filter(p => p.status === 'working').length;
+    }
 
-        // Search/Filter
-        function filterTable(type) {
-            const searchValue = document.getElementById('search-' + type).value.toLowerCase();
-            const tbody = document.getElementById(type + '-body');
-            const rows = tbody.querySelectorAll('tr');
+    // Search/Filter (people)
+    function filterTable(type) {
+        const searchValue = document.getElementById('search-' + type).value.toLowerCase();
+        const tbody = document.getElementById(type + '-body');
+        const rows = tbody.querySelectorAll('tr');
 
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                row.style.display = text.includes(searchValue) ? '' : 'none';
-            });
-        }
-
-        // Filter cars by type, cargo, status, and search
-        function filterCars() {
-            const typeFilter = document.getElementById('filter-car-type').value;
-            const cargoFilter = document.getElementById('filter-car-cargo').value;
-            const statusFilter = document.getElementById('filter-car-status').value;
-            const searchValue = document.getElementById('search-cars').value.toLowerCase();
-            const tbody = document.getElementById('cars-body');
-
-            const typeNames = {
-                'freight': 'פרייט',
-                'inter': 'אינטר'
-            };
-
-            const cargoNames = {
-                'cover': 'כיסוי',
-                'mustang': 'מוסטנג'
-            };
-
-            const statusClasses = {
-                'available': 'status-available',
-                'in-use': 'status-in-use',
-                'maintenance': 'status-maintenance',
-                'graded': 'status-graded'
-            };
-
-            const statusNames = {
-                'available': 'זמין',
-                'in-use': 'בשימוש',
-                'maintenance': 'בתחזוקה',
-                'graded': 'מדורג'
-            };
-
-            const filteredCars = cars.filter(car => {
-                const matchesType = !typeFilter || car.type === typeFilter;
-                const carCargo = car.cargo || 'cover';
-                const matchesCargo = !cargoFilter || carCargo === cargoFilter;
-                const matchesStatus = !statusFilter || car.status === statusFilter;
-                const carType = car.type || 'freight';
-                const driver = people.find(p => p.id === car.driverId);
-                const searchText = `${car.number} ${typeNames[carType]} ${cargoNames[carCargo]} ${statusNames[car.status]} ${driver ? driver.name : ''} ${car.nextService || ''}`.toLowerCase();
-                const matchesSearch = !searchValue || searchText.includes(searchValue);
-                return matchesType && matchesCargo && matchesStatus && matchesSearch;
-            });
-
-            if (filteredCars.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="7">
-                            <div class="empty-state">
-                                <h3>לא נמצאו רכבים</h3>
-                                <p>נסה לשנות את הסינון</p>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            tbody.innerHTML = filteredCars.map(car => {
-                const driver = people.find(p => p.id === car.driverId);
-                const carType = car.type || 'freight';
-                const carCargo = car.cargo || 'cover';
-
-                return `
-                    <tr>
-                        <td data-label="צ'">${car.number}</td>
-                        <td data-label="סוג">${typeNames[carType]}</td>
-                        <td data-label="משא">${cargoNames[carCargo]}</td>
-                        <td data-label="סטטוס"><span class="status-badge ${statusClasses[car.status]}">${statusNames[car.status]}</span></td>
-                        <td data-label="נהג משויך">${driver ? driver.name : '-'}</td>
-                        <td data-label="טיפול הבא">${car.nextService || '-'}</td>
-                        <td>
-                            <div class="action-buttons">
-                                <button class="btn-edit" onclick="editCar('${car.id}')">עריכה</button>
-                                <button class="btn-delete" onclick="deleteCar('${car.id}')">מחיקה</button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        // Export data to JSON file
-        function exportData() {
-            const exportData = {
-                version: DATA_VERSION,
-                exportDate: new Date().toISOString(),
-                cars: cars,
-                people: people
-            };
-
-            const dataString = JSON.stringify(exportData, null, 2);
-            const blob = new Blob([dataString], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-
-            const downloadLink = document.createElement('a');
-            downloadLink.href = url;
-            downloadLink.download = `dashboard-backup-${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(downloadLink);
-            downloadLink.click();
-            document.body.removeChild(downloadLink);
-            URL.revokeObjectURL(url);
-
-            alert('הנתונים יוצאו בהצלחה!');
-        }
-
-        // Import data from JSON file
-        function importData(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const importedData = JSON.parse(e.target.result);
-
-                    if (!importedData.cars || !importedData.people) {
-                        throw new Error('קובץ לא תקין');
-                    }
-
-                    if (confirm(`האם לייבא ${importedData.cars.length} רכבים ו-${importedData.people.length} אנשים?\nפעולה זו תחליף את כל הנתונים הקיימים.`)) {
-                        cars = importedData.cars;
-                        people = importedData.people;
-
-                        localStorage.setItem('fleet_cars', JSON.stringify(cars));
-                        localStorage.setItem('fleet_people', JSON.stringify(people));
-                        localStorage.setItem('fleet_data_version', importedData.version || DATA_VERSION);
-
-                        renderCars();
-                        renderPeople();
-                        updateStats();
-
-                        alert('הנתונים יובאו בהצלחה!');
-                    }
-                } catch (error) {
-                    alert('שגיאה בייבוא הקובץ. אנא ודא שהקובץ תקין.');
-                    console.error('Import error:', error);
-                }
-            };
-            reader.readAsText(file);
-            event.target.value = '';
-        }
-
-        // Close modal when clicking outside
-        window.addEventListener('click', function(event) {
-            if (event.target.classList.contains('modal')) {
-                event.target.classList.remove('active');
-            }
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(searchValue) ? '' : 'none';
         });
-    </script>
+    }
+
+    // Close modal when clicking outside
+    window.addEventListener('click', function(event) {
+        if (event.target.classList.contains('modal')) {
+            event.target.classList.remove('active');
+        }
+    });
+</script>
 </body>
 </html>
