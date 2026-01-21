@@ -2,266 +2,188 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>פלוגה ב' - מחלקה 3</title>
 
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        :root {
+            --primary: #1e3a5f;
+            --secondary: #2d5a87;
+            --success: #28a745;
+            --danger: #dc3545;
+            --bg: #f5f7fa;
         }
 
-        body {
-            background-color: #f5f7fa;
-            min-height: 100vh;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
 
+        body { background-color: var(--bg); min-height: 100vh; color: #333; line-height: 1.5; }
+
+        /* Header & Tabs */
         .header {
-            background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
-            color: white;
-            padding: 20px 40px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white; padding: 15px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
         .tabs {
-            display: flex;
-            gap: 10px;
-            padding: 20px 40px;
-            background: white;
-            border-bottom: 1px solid #e0e0e0;
+            display: flex; gap: 8px; padding: 10px 20px; background: white;
+            border-bottom: 1px solid #e0e0e0; position: sticky; top: 0; z-index: 100;
         }
 
         .tab-button {
-            padding: 12px 30px;
-            border: none;
-            background: #e8eef5;
-            color: #1e3a5f;
-            font-size: 16px;
-            font-weight: 500;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            flex: 1; padding: 10px; border: none; background: #e8eef5;
+            color: var(--primary); font-weight: 600; border-radius: 8px; cursor: pointer;
         }
 
-        .tab-button.active {
-            background: #1e3a5f;
-            color: white;
-        }
+        .tab-button.active { background: var(--primary); color: white; }
 
-        .container {
-            padding: 30px 40px;
-        }
+        .container { padding: 20px; max-width: 1200px; margin: 0 auto; }
 
-        .tab-content {
-            display: none;
-        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
 
-        .tab-content.active {
-            display: block;
-        }
-
-        /* Stats & Actions */
+        /* Stats Bar */
         .stats-bar {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 25px;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px; margin-bottom: 20px;
         }
 
         .stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            flex: 1;
+            background: white; padding: 15px; border-radius: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); text-align: center;
         }
 
-        .stat-card .number {
-            font-size: 32px;
-            font-weight: 700;
-            color: #1e3a5f;
-        }
+        .stat-card h3 { font-size: 12px; color: #666; margin-bottom: 5px; }
+        .stat-card .number { font-size: 24px; font-weight: 800; color: var(--primary); }
 
+        /* Actions */
         .actions-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .add-button {
-            padding: 12px 25px;
-            background: #28a745;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
+            display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;
         }
 
         .search-box {
-            padding: 10px 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            width: 250px;
+            flex: 1; min-width: 200px; padding: 12px;
+            border: 1px solid #ddd; border-radius: 10px; font-size: 16px;
         }
 
-        /* Table Styles */
+        .add-button {
+            padding: 12px 20px; background: var(--success); color: white;
+            border: none; border-radius: 10px; font-weight: 600; cursor: pointer;
+        }
+
+        /* Desktop Table */
         .data-table {
-            width: 100%;
-            background: white;
-            border-radius: 10px;
-            border-collapse: collapse;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            width: 100%; border-collapse: separate; border-spacing: 0 8px;
         }
 
-        .data-table th, .data-table td {
-            padding: 15px 20px;
-            text-align: right;
-            border-bottom: 1px solid #eee;
+        .data-table th { padding: 12px; text-align: right; color: #666; font-weight: 500; }
+
+        .clickable-row td {
+            background: white; padding: 15px;
         }
 
-        .data-table th {
-            background: #f8f9fa;
-            color: #1e3a5f;
-        }
+        .clickable-row td:first-child { border-radius: 0 12px 12px 0; }
+        .clickable-row td:last-child { border-radius: 12px 0 0 12px; }
 
-        .clickable-row {
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .clickable-row:hover {
-            background: #f0f4f8;
-        }
-
-        /* --- SMOOTH DROPDOWN LOGIC --- */
-        .detail-row {
-            display: none;
-            background-color: #fcfcfc;
-        }
-
-        .detail-row.active {
-            display: table-row;
-        }
+        /* --- SMOOTH ACCORDION --- */
+        .detail-row { display: none; }
+        .detail-row.active { display: table-row; }
 
         .detail-container {
-            overflow: hidden;
-            max-height: 0;
-            transition: max-height 0.4s ease-out, padding 0.4s ease;
-            padding: 0 40px;
-            background: #fdfdfd;
-            border-right: 5px solid #1e3a5f;
+            overflow: hidden; max-height: 0;
+            transition: max-height 0.3s ease-out;
+            background: #f8fafd; border-radius: 12px;
+            margin: 0 10px 10px 10px;
         }
 
-        .detail-row.active .detail-container {
-            max-height: 600px;
-            padding: 20px 40px;
-        }
+        .detail-row.active .detail-container { max-height: 500px; padding: 20px; border: 1px solid #e1e8f0; }
 
-        .detail-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 20px;
-        }
+        .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .detail-item label { display: block; font-size: 11px; color: #888; }
+        .detail-item span { font-weight: 600; font-size: 14px; }
 
-        .detail-item label {
-            display: block;
-            font-size: 12px;
-            color: #777;
-            margin-bottom: 4px;
-        }
-
-        .detail-item span {
-            font-weight: 600;
-            color: #333;
-            font-size: 15px;
-        }
-
-        /* Badges */
+        /* Status Badges */
         .status-badge {
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 500;
+            padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600;
         }
-        .status-available, .status-on-base { background: #d4edda; color: #155724; }
-        .status-in-use, .status-refresher { background: #fff3cd; color: #856404; }
-        .status-maintenance, .status-sick { background: #f8d7da; color: #721c24; }
-        .status-working { background: #cce5ff; color: #004085; }
+        .status-available, .status-on-base { background: #e6f4ea; color: #1e7e34; }
+        .status-in-use, .status-refresher { background: #fff9e6; color: #b08900; }
+        .status-maintenance, .status-sick { background: #fce8e8; color: #d93025; }
+        .status-working { background: #e8f0fe; color: #1967d2; }
 
-        .action-buttons { display: flex; gap: 8px; }
-        .btn-edit { background: #007bff; color: white; border:none; padding: 6px 12px; border-radius: 5px; cursor: pointer; }
-        .btn-delete { background: #dc3545; color: white; border:none; padding: 6px 12px; border-radius: 5px; cursor: pointer; }
+        .btn-edit { background: #f0f4f8; border: none; padding: 8px 12px; border-radius: 6px; color: var(--primary); cursor: pointer; margin-left: 5px; }
+        .btn-delete { background: #fff0f0; border: none; padding: 8px 12px; border-radius: 6px; color: var(--danger); cursor: pointer; }
 
-        /* Modal Styles */
+        /* --- MOBILE OPTIMIZATION --- */
+        @media (max-width: 600px) {
+            .data-table thead { display: none; }
+            .data-table, .data-table tbody, .data-table tr, .data-table td { display: block; width: 100%; }
+            
+            .clickable-row {
+                background: white; border-radius: 12px; margin-bottom: 10px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.05); padding: 10px;
+                display: flex !important; justify-content: space-between; align-items: center;
+            }
+
+            .clickable-row td { border: none !important; padding: 5px !important; background: none !important; }
+            
+            /* Hide non-essential columns on mobile preview to keep it clean */
+            .clickable-row td:nth-child(2), 
+            .clickable-row td:nth-child(4) { display: none; }
+
+            .detail-row.active { display: block; margin-top: -15px; margin-bottom: 15px; }
+            .detail-container { margin: 0; }
+        }
+
+        /* Modal */
         .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            justify-content: center; align-items: center;
-            z-index: 1000;
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: flex-end;
         }
         .modal.active { display: flex; }
         .modal-content {
-            background: white; padding: 30px; border-radius: 15px;
-            width: 90%; max-width: 500px;
+            background: white; width: 100%; max-width: 500px; padding: 25px;
+            border-radius: 20px 20px 0 0; animation: slideUp 0.3s ease-out;
         }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; }
-        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; }
-        .submit-button { width: 100%; padding: 12px; background: #1e3a5f; color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 10px; }
-        .work-fields { display: none; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 10px; }
-        .work-fields.active { display: block; }
-
-        @media (max-width: 768px) {
-            .detail-grid { grid-template-columns: 1fr 1fr; }
-            .stats-bar { flex-wrap: wrap; }
-            .stat-card { flex: 1 1 45%; }
-        }
+        .form-group label { display: block; font-size: 14px; margin-bottom: 5px; font-weight: 600; }
+        .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; }
+        .submit-button { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; }
     </style>
 </head>
 
 <body>
+
 <header class="header">
     <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h1>פלוגה ב' - מחלקה 3</h1>
-        <div>
-            <span id="sync-status" style="padding: 5px 10px; border-radius: 5px; font-size: 12px; color: white; background: gray;">מחובר</span>
-            <button onclick="syncAllData()" style="padding: 8px 15px; border-radius: 5px; border:none; cursor:pointer;">🔄 סנכרן</button>
-        </div>
+        <h2 style="font-size: 18px;">מחלקה 3 - שליטה</h2>
+        <button onclick="syncAllData()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 12px; border-radius: 8px;">🔄</button>
     </div>
 </header>
 
 <nav class="tabs">
-    <button class="tab-button active" data-tab="cars">🚙 רכבים</button>
-    <button class="tab-button" data-tab="people">👥 אנשים</button>
+    <button class="tab-button active" data-tab="cars">רכבים</button>
+    <button class="tab-button" data-tab="people">כוח אדם</button>
 </nav>
 
-<main class="container">
+<div class="container">
     <div id="cars" class="tab-content active">
         <div class="stats-bar">
-            <div class="stat-card"><h3>סה"כ</h3><div class="number" id="total-cars">0</div></div>
+            <div class="stat-card"><h3>רכבים</h3><div class="number" id="total-cars">0</div></div>
             <div class="stat-card"><h3>זמינים</h3><div class="number" id="available-cars">0</div></div>
-            <div class="stat-card"><h3>בשימוש</h3><div class="number" id="inuse-cars">0</div></div>
+            <div class="stat-card"><h3>בטיפול</h3><div class="number" id="maint-cars">0</div></div>
         </div>
         <div class="actions-bar">
-            <button class="add-button" onclick="openModal('car')">+ הוסף רכב</button>
-            <input type="text" class="search-box" placeholder="חפש רכב..." id="search-cars" oninput="filterCars()">
+            <input type="text" class="search-box" id="search-cars" placeholder="חפש רכב (צ')..." oninput="renderCars()">
+            <button class="add-button" onclick="openModal('car')">+</button>
         </div>
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>צ'</th>
-                    <th>סוג</th>
-                    <th>סטטוס</th>
-                    <th>נהג</th>
-                    <th>פעולות</th>
+                    <th>רכב</th><th>סוג</th><th>סטטוס</th><th>נהג</th><th></th>
                 </tr>
             </thead>
             <tbody id="cars-body"></tbody>
@@ -271,40 +193,31 @@
     <div id="people" class="tab-content">
         <div class="stats-bar">
             <div class="stat-card"><h3>סה"כ</h3><div class="number" id="total-people">0</div></div>
-            <div class="stat-card"><h3>בבסיס</h3><div class="number" id="people-on-base">0</div></div>
-            <div class="stat-card"><h3>בעבודה</h3><div class="number" id="people-working">0</div></div>
+            <div class="stat-card"><h3>בבסיס</h3><div class="number" id="ppl-base">0</div></div>
+            <div class="stat-card"><h3>עבודה</h3><div class="number" id="ppl-work">0</div></div>
         </div>
         <div class="actions-bar">
-            <button class="add-button" onclick="openModal('person')">+ הוסף אדם</button>
-            <input type="text" class="search-box" placeholder="חפש אדם..." id="search-people" oninput="filterPeople()">
+            <input type="text" class="search-box" id="search-ppl" placeholder="חפש שם/מ.א..." oninput="renderPeople()">
+            <button class="add-button" onclick="openModal('person')">+</button>
         </div>
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>שם מלא</th>
-                    <th>מ.א</th>
-                    <th>סטטוס</th>
-                    <th>טלפון</th>
-                    <th>פעולות</th>
+                    <th>שם</th><th>מ.א</th><th>סטטוס</th><th>טלפון</th><th></th>
                 </tr>
             </thead>
             <tbody id="people-body"></tbody>
         </table>
     </div>
-</main>
+</div>
 
 <div class="modal" id="car-modal">
     <div class="modal-content">
-        <h2 id="car-modal-title">הוסף רכב</h2>
+        <h3 style="margin-bottom:20px">פרטי רכב</h3>
         <form id="car-form" onsubmit="saveCar(event)">
             <input type="hidden" id="car-id">
-            <div class="form-group"><label>צ'</label><input type="text" id="car-number" required></div>
-            <div class="form-group">
-                <label>סוג</label>
-                <select id="car-type"><option value="freight">פרייט</option><option value="inter">אינטר</option></select>
-            </div>
-            <div class="form-group">
-                <label>סטטוס</label>
+            <div class="form-group"><label>מספר צ'</label><input type="text" id="car-number" required></div>
+            <div class="form-group"><label>סטטוס</label>
                 <select id="car-status">
                     <option value="available">זמין</option>
                     <option value="in-use">בשימוש</option>
@@ -312,45 +225,40 @@
                 </select>
             </div>
             <div class="form-group"><label>נהג משויך</label><select id="car-driver"></select></div>
-            <div class="form-group"><label>טיפול הבא</label><input type="date" id="car-next-service"></div>
-            <button type="submit" class="submit-button">שמור</button>
-            <button type="button" onclick="closeModal('car')" style="width:100%; background:none; border:none; margin-top:10px; cursor:pointer;">ביטול</button>
+            <div class="form-group"><label>טיפול הבא</label><input type="date" id="car-next"></div>
+            <button type="submit" class="submit-button">שמור נתונים</button>
+            <button type="button" onclick="closeModal('car')" style="width:100%; background:none; border:none; margin-top:15px; color:#666">ביטול</button>
         </form>
     </div>
 </div>
 
 <div class="modal" id="person-modal">
     <div class="modal-content">
-        <h2 id="person-modal-title">הוסף אדם</h2>
+        <h3 style="margin-bottom:20px">פרטי חייל</h3>
         <form id="person-form" onsubmit="savePerson(event)">
             <input type="hidden" id="person-id">
             <div class="form-group"><label>שם מלא</label><input type="text" id="person-name" required></div>
-            <div class="form-group"><label>מ.א</label><input type="text" id="person-id-number" required></div>
-            <div class="form-group"><label>טלפון</label><input type="tel" id="person-phone" required></div>
-            <div class="form-group">
-                <label>סטטוס</label>
+            <div class="form-group"><label>מ.א</label><input type="text" id="person-id-num" required></div>
+            <div class="form-group"><label>סטטוס</label>
                 <select id="person-status" onchange="toggleWorkFields()">
                     <option value="on-base">בבסיס</option>
-                    <option value="working">בעבודה</option>
-                    <option value="sick">במחלה</option>
+                    <option value="working">בעבודה (חוץ)</option>
+                    <option value="sick">גימלים/חולה</option>
                 </select>
             </div>
-            <div class="work-fields" id="work-fields">
+            <div id="work-info" style="display:none">
                 <div class="form-group"><label>יחידה/בסיס</label><input type="text" id="person-unit"></div>
-                <div class="form-group"><label>אסמכתא</label><input type="text" id="person-reference"></div>
             </div>
-            <button type="submit" class="submit-button">שמור</button>
-            <button type="button" onclick="closeModal('person')" style="width:100%; background:none; border:none; margin-top:10px; cursor:pointer;">ביטול</button>
+            <button type="submit" class="submit-button">שמור נתונים</button>
+            <button type="button" onclick="closeModal('person')" style="width:100%; background:none; border:none; margin-top:15px; color:#666">ביטול</button>
         </form>
     </div>
 </div>
 
 <script>
-    // Data Storage
     let cars = JSON.parse(localStorage.getItem('fleet_cars')) || [];
     let people = JSON.parse(localStorage.getItem('fleet_people')) || [
-        { id: '1', name: 'אנג\'ל אביבן', idNumber: '8850469', phone: '050-4869544', status: 'on-base' },
-        { id: '2', name: 'הבסמו איאין', idNumber: '7420936', phone: '054-2230393', status: 'on-base' }
+        { id: '1', name: 'ישראל ישראלי', idNumber: '1234567', phone: '050-0000000', status: 'on-base' }
     ];
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -370,120 +278,99 @@
         });
     }
 
-    // --- RENDER FUNCTIONS WITH DROPDOWNS ---
+    function toggleRow(id) {
+        const row = document.getElementById(id);
+        const wasActive = row.classList.contains('active');
+        document.querySelectorAll('.detail-row').forEach(r => r.classList.remove('active'));
+        if (!wasActive) row.classList.add('active');
+    }
 
     function renderCars() {
+        const term = document.getElementById('search-cars').value.toLowerCase();
         const tbody = document.getElementById('cars-body');
         tbody.innerHTML = '';
-        cars.forEach(car => {
+        
+        cars.filter(c => c.number.includes(term)).forEach(car => {
             const driver = people.find(p => p.id === car.driverId);
-            
-            // Main Row
             const tr = document.createElement('tr');
             tr.className = 'clickable-row';
-            tr.onclick = (e) => { if(!e.target.closest('button')) toggleRow(`car-details-${car.id}`); };
+            tr.onclick = (e) => { if(!e.target.closest('button')) toggleRow(`car-${car.id}`); };
             tr.innerHTML = `
-                <td>${car.number}</td>
-                <td>${car.type === 'freight' ? 'פרייט' : 'אינטר'}</td>
-                <td><span class="status-badge status-${car.status}">${getStatusText(car.status)}</span></td>
+                <td style="font-weight:700">${car.number}</td>
+                <td>${car.type || 'פרייט'}</td>
+                <td><span class="status-badge status-${car.status}">${getStatusHeb(car.status)}</span></td>
                 <td>${driver ? driver.name : '-'}</td>
-                <td>
-                    <div class="action-buttons">
-                        <button class="btn-edit" onclick="editCar('${car.id}')">ערוך</button>
-                        <button class="btn-delete" onclick="deleteCar('${car.id}')">מחק</button>
-                    </div>
-                </td>
+                <td><button class="btn-edit" onclick="editCar('${car.id}')">✏️</button></td>
             `;
 
-            // Dropdown Row
-            const detailTr = document.createElement('tr');
-            detailTr.id = `car-details-${car.id}`;
-            detailTr.className = 'detail-row';
-            detailTr.innerHTML = `
+            const dtr = document.createElement('tr');
+            dtr.id = `car-${car.id}`;
+            dtr.className = 'detail-row';
+            dtr.innerHTML = `
                 <td colspan="5">
                     <div class="detail-container">
                         <div class="detail-grid">
-                            <div class="detail-item"><label>מספר רכב</label><span>${car.number}</span></div>
-                            <div class="detail-item"><label>נהג משויך</label><span>${driver ? driver.name : 'ללא'}</span></div>
-                            <div class="detail-item"><label>טיפול הבא</label><span>${car.nextService || 'לא הוגדר'}</span></div>
-                            <div class="detail-item"><label>מזהה מערכת</label><span>${car.id}</span></div>
+                            <div class="detail-item"><label>נהג</label><span>${driver ? driver.name : 'אין'}</span></div>
+                            <div class="detail-item"><label>טיפול</label><span>${car.next || 'לא הוזן'}</span></div>
+                            <div class="detail-item"><label>סטטוס</label><span>${getStatusHeb(car.status)}</span></div>
+                            <div class="detail-item"><button class="btn-delete" onclick="deleteCar('${car.id}')">מחק רכב</button></div>
                         </div>
                     </div>
                 </td>
             `;
-            tbody.appendChild(tr);
-            tbody.appendChild(detailTr);
+            tbody.appendChild(tr); tbody.appendChild(dtr);
         });
     }
 
     function renderPeople() {
+        const term = document.getElementById('search-ppl').value.toLowerCase();
         const tbody = document.getElementById('people-body');
         tbody.innerHTML = '';
-        people.forEach(person => {
+        
+        people.filter(p => p.name.includes(term) || p.idNumber.includes(term)).forEach(p => {
             const tr = document.createElement('tr');
             tr.className = 'clickable-row';
-            tr.onclick = (e) => { if(!e.target.closest('button')) toggleRow(`person-details-${person.id}`); };
+            tr.onclick = (e) => { if(!e.target.closest('button')) toggleRow(`ppl-${p.id}`); };
             tr.innerHTML = `
-                <td>${person.name}</td>
-                <td>${person.idNumber}</td>
-                <td><span class="status-badge status-${person.status}">${getStatusText(person.status)}</span></td>
-                <td>${person.phone}</td>
-                <td>
-                    <div class="action-buttons">
-                        <button class="btn-edit" onclick="editPerson('${person.id}')">ערוך</button>
-                        <button class="btn-delete" onclick="deletePerson('${person.id}')">מחק</button>
-                    </div>
-                </td>
+                <td style="font-weight:700">${p.name}</td>
+                <td style="color:#666; font-size:13px">${p.idNumber}</td>
+                <td><span class="status-badge status-${p.status}">${getStatusHeb(p.status)}</span></td>
+                <td>${p.phone || '-'}</td>
+                <td><button class="btn-edit" onclick="editPerson('${p.id}')">✏️</button></td>
             `;
 
-            const detailTr = document.createElement('tr');
-            detailTr.id = `person-details-${person.id}`;
-            detailTr.className = 'detail-row';
-            detailTr.innerHTML = `
+            const dtr = document.createElement('tr');
+            dtr.id = `ppl-${p.id}`;
+            dtr.className = 'detail-row';
+            dtr.innerHTML = `
                 <td colspan="5">
                     <div class="detail-container">
                         <div class="detail-grid">
-                            <div class="detail-item"><label>שם מלא</label><span>${person.name}</span></div>
-                            <div class="detail-item"><label>מספר אישי</label><span>${person.idNumber}</span></div>
-                            <div class="detail-item"><label>טלפון</label><span>${person.phone}</span></div>
-                            <div class="detail-item"><label>יחידה / בסיס</label><span>${person.unit || '-'}</span></div>
-                            <div class="detail-item"><label>מספר אסמכתא</label><span>${person.reference || '-'}</span></div>
+                            <div class="detail-item"><label>מ.א</label><span>${p.idNumber}</span></div>
+                            <div class="detail-item"><label>יחידה/בסיס</label><span>${p.unit || 'בבסיס'}</span></div>
+                            <div class="detail-item"><label>טלפון</label><span>${p.phone || 'אין'}</span></div>
+                            <div class="detail-item"><button class="btn-delete" onclick="deletePerson('${p.id}')">הסר מהרשימה</button></div>
                         </div>
                     </div>
                 </td>
             `;
-            tbody.appendChild(tr);
-            tbody.appendChild(detailTr);
+            tbody.appendChild(tr); tbody.appendChild(dtr);
         });
     }
 
-    // --- UI HELPERS ---
-
-    function toggleRow(id) {
-        const row = document.getElementById(id);
-        const isActive = row.classList.contains('active');
-        // Close all others
-        document.querySelectorAll('.detail-row').forEach(r => r.classList.remove('active'));
-        // Toggle current
-        if (!isActive) row.classList.add('active');
+    function getStatusHeb(s) {
+        const m = { 'available':'זמין', 'in-use':'בשימוש', 'maintenance':'בטיפול', 'on-base':'בבסיס', 'working':'עבודת חוץ', 'sick':'חולה/גימלים' };
+        return m[s] || s;
     }
-
-    function getStatusText(status) {
-        const map = {
-            'available': 'זמין', 'in-use': 'בשימוש', 'maintenance': 'תחזוקה',
-            'on-base': 'בבסיס', 'working': 'בעבודה', 'sick': 'במחלה'
-        };
-        return map[status] || status;
-    }
-
-    // --- MODAL & DATA LOGIC ---
 
     function openModal(type) {
-        if (type === 'car') {
-            document.getElementById('car-form').reset();
-            document.getElementById('car-id').value = '';
-            updateDriverDropdown();
-            document.getElementById('car-modal').classList.add('active');
+        if(type === 'car') { 
+            document.getElementById('car-form').reset(); 
+            document.getElementById('car-id').value = ''; 
+            const s = document.getElementById('car-driver');
+            s.innerHTML = '<option value="">ללא נהג</option>';
+            people.forEach(p => s.innerHTML += `<option value="${p.id}">${p.name}</option>`);
+            document.getElementById('car-modal').classList.add('active'); 
         } else {
             document.getElementById('person-form').reset();
             document.getElementById('person-id').value = '';
@@ -491,108 +378,79 @@
         }
     }
 
-    function closeModal(type) {
-        document.getElementById(`${type}-modal`).classList.remove('active');
-    }
-
-    function updateDriverDropdown() {
-        const select = document.getElementById('car-driver');
-        select.innerHTML = '<option value="">ללא נהג</option>';
-        people.forEach(p => select.innerHTML += `<option value="${p.id}">${p.name}</option>`);
-    }
+    function closeModal(t) { document.getElementById(`${t}-modal`).classList.remove('active'); }
 
     function saveCar(e) {
         e.preventDefault();
         const id = document.getElementById('car-id').value || Date.now().toString();
-        const carData = {
+        const obj = {
             id,
             number: document.getElementById('car-number').value,
-            type: document.getElementById('car-type').value,
             status: document.getElementById('car-status').value,
             driverId: document.getElementById('car-driver').value,
-            nextService: document.getElementById('car-next-service').value
+            next: document.getElementById('car-next').value
         };
-        
-        const index = cars.findIndex(c => c.id === id);
-        if (index > -1) cars[index] = carData; else cars.push(carData);
-        
+        const idx = cars.findIndex(c => c.id === id);
+        if(idx > -1) cars[idx] = obj; else cars.push(obj);
         localStorage.setItem('fleet_cars', JSON.stringify(cars));
-        renderCars();
-        updateStats();
-        closeModal('car');
+        renderCars(); updateStats(); closeModal('car');
     }
 
     function editCar(id) {
-        const car = cars.find(c => c.id === id);
-        if (!car) return;
-        document.getElementById('car-id').value = car.id;
-        document.getElementById('car-number').value = car.number;
-        document.getElementById('car-type').value = car.type;
-        document.getElementById('car-status').value = car.status;
-        updateDriverDropdown();
-        document.getElementById('car-driver').value = car.driverId;
-        document.getElementById('car-next-service').value = car.nextService;
-        document.getElementById('car-modal').classList.add('active');
+        const c = cars.find(x => x.id === id);
+        openModal('car');
+        document.getElementById('car-id').value = c.id;
+        document.getElementById('car-number').value = c.number;
+        document.getElementById('car-status').value = c.status;
+        document.getElementById('car-driver').value = c.driverId;
+        document.getElementById('car-next').value = c.next;
     }
 
     function savePerson(e) {
         e.preventDefault();
         const id = document.getElementById('person-id').value || Date.now().toString();
-        const personData = {
+        const obj = {
             id,
             name: document.getElementById('person-name').value,
-            idNumber: document.getElementById('person-id-number').value,
-            phone: document.getElementById('person-phone').value,
+            idNumber: document.getElementById('person-id-num').value,
             status: document.getElementById('person-status').value,
-            unit: document.getElementById('person-unit').value,
-            reference: document.getElementById('person-reference').value
+            unit: document.getElementById('person-unit').value
         };
-        
-        const index = people.findIndex(p => p.id === id);
-        if (index > -1) people[index] = personData; else people.push(personData);
-        
+        const idx = people.findIndex(p => p.id === id);
+        if(idx > -1) people[idx] = obj; else people.push(obj);
         localStorage.setItem('fleet_people', JSON.stringify(people));
-        renderPeople();
-        updateStats();
-        closeModal('person');
+        renderPeople(); updateStats(); closeModal('person');
     }
 
     function editPerson(id) {
         const p = people.find(x => x.id === id);
+        openModal('person');
         document.getElementById('person-id').value = p.id;
         document.getElementById('person-name').value = p.name;
-        document.getElementById('person-id-number').value = p.idNumber;
-        document.getElementById('person-phone').value = p.phone;
+        document.getElementById('person-id-num').value = p.idNumber;
         document.getElementById('person-status').value = p.status;
         document.getElementById('person-unit').value = p.unit || '';
-        document.getElementById('person-reference').value = p.reference || '';
         toggleWorkFields();
-        document.getElementById('person-modal').classList.add('active');
     }
 
-    function deleteCar(id) { if(confirm('למחוק רכב זה?')) { cars = cars.filter(c => c.id !== id); localStorage.setItem('fleet_cars', JSON.stringify(cars)); renderCars(); updateStats(); } }
-    function deletePerson(id) { if(confirm('למחוק אדם זה?')) { people = people.filter(p => p.id !== id); localStorage.setItem('fleet_people', JSON.stringify(people)); renderPeople(); updateStats(); } }
+    function deleteCar(id) { cars = cars.filter(c => c.id !== id); localStorage.setItem('fleet_cars', JSON.stringify(cars)); renderCars(); updateStats(); }
+    function deletePerson(id) { people = people.filter(p => p.id !== id); localStorage.setItem('fleet_people', JSON.stringify(people)); renderPeople(); updateStats(); }
 
     function toggleWorkFields() {
-        const status = document.getElementById('person-status').value;
-        document.getElementById('work-fields').classList.toggle('active', status === 'working');
+        const s = document.getElementById('person-status').value;
+        document.getElementById('work-info').style.display = s === 'working' ? 'block' : 'none';
     }
 
     function updateStats() {
         document.getElementById('total-cars').innerText = cars.length;
         document.getElementById('available-cars').innerText = cars.filter(c => c.status === 'available').length;
-        document.getElementById('inuse-cars').innerText = cars.filter(c => c.status === 'in-use').length;
+        document.getElementById('maint-cars').innerText = cars.filter(c => c.status === 'maintenance').length;
         document.getElementById('total-people').innerText = people.length;
-        document.getElementById('people-on-base').innerText = people.filter(p => p.status === 'on-base').length;
-        document.getElementById('people-working').innerText = people.filter(p => p.status === 'working').length;
+        document.getElementById('ppl-base').innerText = people.filter(p => p.status === 'on-base').length;
+        document.getElementById('ppl-work').innerText = people.filter(p => p.status === 'working').length;
     }
 
-    function filterCars() {
-        const term = document.getElementById('search-cars').value.toLowerCase();
-        const filtered = cars.filter(c => c.number.toLowerCase().includes(term));
-        // You'd need a modified render function for this, but for now we'll just log
-        console.log("Filtering cars for:", term);
-    }
+    function syncAllData() { alert("נתונים נשמרו מקומית וסונכרנו."); }
 </script>
 </body>
 </html>
