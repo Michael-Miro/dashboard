@@ -422,7 +422,7 @@
                 font-size: 16px !important;
             }
 
-            /* Table becomes compact cards on mobile */
+            /* Table becomes compact list on mobile */
             .data-table {
                 display: block;
             }
@@ -432,58 +432,66 @@
             }
 
             .data-table tbody {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 8px;
+                display: block;
             }
 
             .data-table tr {
-                display: block;
+                display: flex;
+                align-items: center;
                 background: white;
-                border-radius: 8px;
-                padding: 10px;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-                flex: 1 1 calc(50% - 4px);
-                min-width: 150px;
-                font-size: 12px;
+                padding: 8px 12px;
+                border-bottom: 1px solid #eee;
+                gap: 8px;
             }
 
-            .data-table td {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 3px 0;
+            .data-table tr:first-child {
+                border-radius: 8px 8px 0 0;
+            }
+
+            .data-table tr:last-child {
+                border-radius: 0 0 8px 8px;
                 border-bottom: none;
             }
 
+            .data-table td {
+                display: none;
+            }
+
+            /* Show only key fields in list */
+            .data-table td:first-child {
+                display: block;
+                font-weight: 600;
+                color: #1e3a5f;
+                min-width: 60px;
+            }
+
+            .data-table td:nth-child(4) {
+                display: block;
+                margin-right: auto;
+            }
+
             .data-table td:last-child {
-                justify-content: center;
-                padding-top: 8px;
-                margin-top: 5px;
-                border-top: 1px solid #eee;
+                display: flex;
+                gap: 5px;
+                margin-right: 0;
             }
 
             .data-table td::before {
-                content: attr(data-label);
-                font-weight: 600;
-                color: #1e3a5f;
-                margin-left: 5px;
-                font-size: 11px;
+                display: none;
             }
 
             .status-badge {
-                font-size: 10px;
-                padding: 2px 6px;
+                font-size: 11px;
+                padding: 3px 8px;
             }
 
             .action-buttons {
-                width: 100%;
-                justify-content: center;
                 gap: 5px;
             }
 
             .btn-edit, .btn-delete {
-                flex: 1;
+                padding: 5px 10px;
+                font-size: 12px;
                 text-align: center;
                 padding: 6px 8px;
                 font-size: 11px;
