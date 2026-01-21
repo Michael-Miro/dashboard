@@ -477,12 +477,62 @@
                 font-size: 16px;
                 padding: 14px;
             }
+
+            .sync-buttons {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .sync-btn {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+        }
+
+        .sync-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .sync-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .export-btn {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .export-btn:hover {
+            background: #138496;
+        }
+
+        .import-btn {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .import-btn:hover {
+            background: #e0a800;
         }
     </style>
 </head>
 <body>
     <header class="header">
-        <h1>פלוגה ב' - מחלקה 3</h1>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <h1>פלוגה ב' - מחלקה 3</h1>
+            <div class="sync-buttons">
+                <button class="sync-btn export-btn" onclick="exportData()">📤 ייצוא נתונים</button>
+                <button class="sync-btn import-btn" onclick="document.getElementById('import-file').click()">📥 ייבוא נתונים</button>
+                <input type="file" id="import-file" accept=".json" style="display: none;" onchange="importData(event)">
+            </div>
+        </div>
     </header>
 
     <nav class="tabs">
@@ -1168,6 +1218,67 @@
                     </tr>
                 `;
             }).join('');
+        }
+
+        // Export data to JSON file
+        function exportData() {
+            const exportData = {
+                version: DATA_VERSION,
+                exportDate: new Date().toISOString(),
+                cars: cars,
+                people: people
+            };
+
+            const dataString = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([dataString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const downloadLink = document.createElement('a');
+            downloadLink.href = url;
+            downloadLink.download = `dashboard-backup-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            URL.revokeObjectURL(url);
+
+            alert('הנתונים יוצאו בהצלחה!');
+        }
+
+        // Import data from JSON file
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+
+                    if (!importedData.cars || !importedData.people) {
+                        throw new Error('קובץ לא תקין');
+                    }
+
+                    if (confirm(`האם לייבא ${importedData.cars.length} רכבים ו-${importedData.people.length} אנשים?\nפעולה זו תחליף את כל הנתונים הקיימים.`)) {
+                        cars = importedData.cars;
+                        people = importedData.people;
+
+                        localStorage.setItem('fleet_cars', JSON.stringify(cars));
+                        localStorage.setItem('fleet_people', JSON.stringify(people));
+                        localStorage.setItem('fleet_data_version', importedData.version || DATA_VERSION);
+
+                        renderCars();
+                        renderPeople();
+                        updateStats();
+
+                        alert('הנתונים יובאו בהצלחה!');
+                    }
+                } catch (error) {
+                    alert('שגיאה בייבוא הקובץ. אנא ודא שהקובץ תקין.');
+                    console.error('Import error:', error);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
         }
 
         // Close modal when clicking outside
