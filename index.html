@@ -630,6 +630,32 @@
                 background: #f5f7fa;
                 padding-bottom: 10px;
             }
+
+            .search-container {
+                display: flex;
+                width: 100%;
+                gap: 10px;
+            }
+
+            .exit-search-btn {
+                display: none;
+                padding: 0 15px;
+                background: #dc3545;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                white-space: nowrap;
+                font-size: 14px;
+            }
+
+            body.search-mode .exit-search-btn {
+                display: block !important;
+            }
+
+            .search-container input {
+                flex: 1;
+            }
         }
     </style>
 </head>
@@ -742,8 +768,11 @@
 
             <div class="actions-bar">
                 <button class="add-button" onclick="openModal('person')">+ הוסף נהג</button>
-                <input type="text" class="search-box" placeholder="חיפוש נהג..." id="search-people"
-                    oninput="filterTable('people')">
+                <div class="search-container">
+                    <input type="text" class="search-box" placeholder="חיפוש נהג..." id="search-people"
+                        oninput="filterTable('people')">
+                    <button class="exit-search-btn" onclick="exitSearchMode()">סגור</button>
+                </div>
             </div>
 
             <table class="data-table" id="people-table">
