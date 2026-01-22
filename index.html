@@ -609,6 +609,27 @@
             .sync-buttons {
                 display: none;
             }
+
+            /* Search Mode - Hide clutter when searching */
+            body.search-mode .header,
+            body.search-mode .tabs,
+            body.search-mode .stats-bar,
+            body.search-mode .add-button {
+                display: none !important;
+            }
+
+            body.search-mode .container {
+                padding-top: 10px;
+            }
+
+            body.search-mode .actions-bar {
+                margin-bottom: 10px;
+                position: sticky;
+                top: 0;
+                z-index: 100;
+                background: #f5f7fa;
+                padding-bottom: 10px;
+            }
         }
     </style>
 </head>
@@ -993,7 +1014,35 @@
             renderPeople();
             updateStats();
             setupTabs();
+            setupSearchListeners();
         });
+
+        // Check if we are on the mobile view
+        function isMobile() {
+            return window.innerWidth <= 768;
+        }
+
+        // Mobile Search Mode Logic
+        function setupSearchListeners() {
+            const searchInputs = [document.getElementById('search-cars'), document.getElementById('search-people')];
+
+            searchInputs.forEach(input => {
+                if (!input) return;
+
+                input.addEventListener('focus', () => {
+                    if (isMobile()) {
+                        document.body.classList.add('search-mode');
+                    }
+                });
+
+                input.addEventListener('blur', () => {
+                    // Small delay to allow clicking results without jumping layout immediately
+                    setTimeout(() => {
+                        document.body.classList.remove('search-mode');
+                    }, 200);
+                });
+            });
+        }
 
         // Tab Navigation
         function setupTabs() {
