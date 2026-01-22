@@ -22,10 +22,29 @@
         }
 
         .header {
-            background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+            background: linear-gradient(135deg, #2C97D1 0%, #1A5F85 100%);
             color: white;
-            padding: 20px 40px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 15px 40px;
+            box-shadow: 0 4px 15px rgba(44, 151, 209, 0.2);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo {
+            height: 60px;
+            width: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .header h1 {
@@ -58,7 +77,7 @@
         }
 
         .tab-button.active {
-            background: #1e3a5f;
+            background: #2C97D1;
             color: white;
         }
 
@@ -122,7 +141,7 @@
         .data-table th {
             background: #f8f9fa;
             font-weight: 600;
-            color: #1e3a5f;
+            color: #2C97D1;
         }
 
         .data-table tr:hover {
@@ -583,61 +602,17 @@
             }
 
             .sync-buttons {
-                flex-direction: column;
-                gap: 5px;
+                display: none;
             }
-
-            .sync-btn {
-                padding: 8px 12px;
-                font-size: 12px;
-            }
-        }
-
-        .sync-buttons {
-            display: flex;
-            gap: 10px;
-        }
-
-        .sync-btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-
-        .export-btn {
-            background: #17a2b8;
-            color: white;
-        }
-
-        .export-btn:hover {
-            background: #138496;
-        }
-
-        .import-btn {
-            background: #ffc107;
-            color: #212529;
-        }
-
-        .import-btn:hover {
-            background: #e0a800;
         }
     </style>
 </head>
 
 <body>
     <header class="header">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div class="header-content">
+            <img src="./logo.png" alt="Logo" class="logo">
             <h1>פלוגה ב' - מחלקה 3</h1>
-            <div class="sync-buttons">
-                <span id="sync-status"
-                    style="padding: 5px 10px; border-radius: 5px; font-size: 12px; color: white; background: gray;">טוען...</span>
-                <button class="sync-btn" style="background: #28a745; color: white;" onclick="syncAllData()">🔄
-                    סנכרן</button>
-            </div>
         </div>
     </header>
 
@@ -1298,7 +1273,7 @@
                 const personStatus = person.status || 'on-base';
                 return `
                 <tr onclick="toggleDetails(this)" style="cursor: pointer">
-                    <td data-label="שם מלא">${person.name}</td>
+                    <td data-label=""><strong>${person.name}</strong></td>
                     <td data-label="מספר אישי">${person.idNumber}</td>
                     <td data-label="טלפון">${person.phone}</td>
                     <td data-label="סטטוס"><span class="status-badge ${statusClasses[personStatus]}">${statusNames[personStatus]}</span></td>
