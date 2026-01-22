@@ -461,19 +461,17 @@
             }
 
             /* Base state for all cells - hidden but ready for expansion */
-            /* Base state for all cells - hidden but ready for expansion */
             .data-table td {
                 display: flex;
                 max-height: 0;
                 overflow: hidden;
-                padding: 0 10px;
-                /* Horizontal padding only if needed, but safer to be 0 when hidden */
                 padding: 0;
                 margin: 0;
                 opacity: 0;
                 width: 100%;
                 order: 10;
-                justify-content: space-between;
+                justify-content: flex-start;
+                gap: 15px;
                 align-items: center;
                 border: none;
                 transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -498,7 +496,8 @@
                 opacity: 1;
                 width: auto;
                 order: 2;
-                margin-right: auto;
+                margin-right: 0;
+                /* Removed auto margin that was pushing it to the far side */
                 padding: 0;
             }
 
