@@ -453,13 +453,29 @@
                 border-bottom: none;
             }
 
+            /* Base state for all cells - hidden but ready for expansion */
             .data-table td {
-                display: none;
+                display: flex;
+                max-height: 0;
+                overflow: hidden;
+                padding: 0 10px;
+                opacity: 0;
+                width: 100%;
+                order: 10;
+                justify-content: space-between;
+                align-items: center;
+                border: none;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             }
 
-            /* Show only key fields in list */
+            /* Always visible columns */
             .data-table td:first-child {
                 display: block;
+                max-height: none;
+                opacity: 1;
+                width: auto;
+                order: 1;
+                padding: 0;
                 font-weight: 600;
                 color: #1e3a5f;
                 min-width: 60px;
@@ -467,17 +483,62 @@
 
             .data-table td:nth-child(4) {
                 display: block;
+                max-height: none;
+                opacity: 1;
+                width: auto;
+                order: 2;
                 margin-right: auto;
+                padding: 0;
             }
 
             .data-table td:last-child {
                 display: flex;
-                gap: 5px;
+                max-height: none;
+                opacity: 1;
+                width: auto;
+                order: 3;
                 margin-right: 0;
+                padding: 0;
+                gap: 5px;
             }
 
+            /* Labels for expanded content */
             .data-table td::before {
+                content: attr(data-label);
+                display: inline-block;
+                font-weight: 600;
+                color: #666;
+                font-size: 0.9em;
+            }
+            
+            /* Hide labels for always-visible columns */
+            .data-table td:first-child::before,
+            .data-table td:nth-child(4):::before,
+            .data-table td:last-child::before {
                 display: none;
+            }
+
+            /* Expanded State styling */
+            .data-table tr.expanded {
+                background-color: #f8f9fa;
+            }
+
+            .data-table tr.expanded td {
+                max-height: 50px; /* Adjust based on content */
+                opacity: 1;
+                padding: 8px 10px;
+                border-top: 1px solid #f0f0f0;
+                margin-top: 2px;
+            }
+
+            /* Ensure always-visible cells don't get expanded styling */
+            .data-table tr.expanded td:first-child,
+            .data-table tr.expanded td:nth-child(4),
+            .data-table tr.expanded td:last-child {
+                max-height: none;
+                padding: 0;
+                border: none;
+                margin: 0;
             }
 
             .status-badge {
@@ -1086,7 +1147,7 @@
                 const carCargo = car.cargo || 'cover';
 
                 return `
-                    <tr>
+                    <tr onclick="toggleDetails(this)" style="cursor: pointer">
                         <td data-label="צ'">${car.number}</td>
                         <td data-label="סוג">${typeNames[carType]}</td>
                         <td data-label="משא">${cargoNames[carCargo]}</td>
@@ -1095,8 +1156,8 @@
                         <td data-label="טיפול הבא">${car.nextService || '-'}</td>
                         <td>
                             <div class="action-buttons">
-                                <button class="btn-edit" onclick="editCar('${car.id}')">עריכה</button>
-                                <button class="btn-delete" onclick="deleteCar('${car.id}')">מחיקה</button>
+                                <button class="btn-edit" onclick="event.stopPropagation(); editCar('${car.id}')">עריכה</button>
+                                <button class="btn-delete" onclick="event.stopPropagation(); deleteCar('${car.id}')">מחיקה</button>
                             </div>
                         </td>
                     </tr>
@@ -1219,7 +1280,7 @@
             tbody.innerHTML = people.map(person => {
                 const personStatus = person.status || 'on-base';
                 return `
-                <tr>
+                <tr onclick="toggleDetails(this)" style="cursor: pointer">
                     <td data-label="שם מלא">${person.name}</td>
                     <td data-label="מספר אישי">${person.idNumber}</td>
                     <td data-label="טלפון">${person.phone}</td>
@@ -1229,8 +1290,8 @@
                     <td data-label="סיום אסמכתא">${person.referenceEnd || '-'}</td>
                     <td>
                         <div class="action-buttons">
-                            <button class="btn-edit" onclick="editPerson('${person.id}')">עריכה</button>
-                            <button class="btn-delete" onclick="deletePerson('${person.id}')">מחיקה</button>
+                            <button class="btn-edit" onclick="event.stopPropagation(); editPerson('${person.id}')">עריכה</button>
+                            <button class="btn-delete" onclick="event.stopPropagation(); deletePerson('${person.id}')">מחיקה</button>
                         </div>
                     </td>
                 </tr>
@@ -1328,7 +1389,7 @@
                 const carCargo = car.cargo || 'cover';
 
                 return `
-                    <tr>
+                    <tr onclick="toggleDetails(this)" style="cursor: pointer">
                         <td data-label="צ'">${car.number}</td>
                         <td data-label="סוג">${typeNames[carType]}</td>
                         <td data-label="משא">${cargoNames[carCargo]}</td>
@@ -1337,8 +1398,8 @@
                         <td data-label="טיפול הבא">${car.nextService || '-'}</td>
                         <td>
                             <div class="action-buttons">
-                                <button class="btn-edit" onclick="editCar('${car.id}')">עריכה</button>
-                                <button class="btn-delete" onclick="deleteCar('${car.id}')">מחיקה</button>
+                                <button class="btn-edit" onclick="event.stopPropagation(); editCar('${car.id}')">עריכה</button>
+                                <button class="btn-delete" onclick="event.stopPropagation(); deleteCar('${car.id}')">מחיקה</button>
                             </div>
                         </td>
                     </tr>
@@ -1405,6 +1466,12 @@
             };
             reader.readAsText(file);
             event.target.value = '';
+        }
+
+        // Toggle row details
+        function toggleDetails(row) {
+            // Only toggle on mobile (check window width or simply always toggle class, class only affects mobile via CSS media query)
+            row.classList.toggle('expanded');
         }
 
         // Close modal when clicking outside
