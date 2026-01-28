@@ -1141,13 +1141,34 @@
             document.getElementById(type + '-modal').classList.remove('active');
         }
 
-        // Update driver dropdown in car form (only show people on base)
+        // Update driver dropdown in car form with availability status
         function updateDriverDropdown() {
             const driverSelect = document.getElementById('car-driver');
+            const currentValue = driverSelect.value;
+            const currentCarId = document.getElementById('car-id').value;
             driverSelect.innerHTML = '<option value="">ללא נהג משויך</option>';
-            people.filter(person => person.status === 'on-base').forEach(driver => {
-                driverSelect.innerHTML += `<option value="${driver.id}">${driver.name}</option>`;
+
+            people.forEach(driver => {
+                let statusText = '';
+                let isDisabled = false;
+                const driverStatus = driver.status || 'on-base';
+
+                if (driverStatus === 'sick') {
+                    statusText = ' (במחלה)';
+                    isDisabled = true;
+                } else if (driverStatus === 'refresher') {
+                    statusText = ' (ברענון)';
+                    isDisabled = true;
+                } else if (driverStatus === 'working' && driver.assignedCarId && driver.assignedCarId !== currentCarId) {
+                    // Driver is working with another car
+                    const assignedCar = cars.find(c => c.id === driver.assignedCarId);
+                    statusText = assignedCar ? ` (ברכב צ' ${assignedCar.number})` : ' (בעבודה)';
+                    isDisabled = true;
+                }
+
+                driverSelect.innerHTML += `<option value="${driver.id}" ${isDisabled ? 'disabled' : ''}>${driver.name}${statusText}</option>`;
             });
+            driverSelect.value = currentValue;
         }
 
         // Car Functions
@@ -1155,15 +1176,56 @@
             event.preventDefault();
 
             const carId = document.getElementById('car-id').value;
+            const newDriverId = document.getElementById('car-driver').value;
+
+            // Get old car data to check previous driver assignment
+            const oldCar = carId ? cars.find(c => c.id === carId) : null;
+            const oldDriverId = oldCar ? oldCar.driverId || '' : '';
+
             const carData = {
                 id: carId || Date.now().toString(),
                 number: document.getElementById('car-number').value,
                 type: document.getElementById('car-type').value,
                 cargo: document.getElementById('car-cargo').value,
                 status: document.getElementById('car-status').value,
-                driverId: document.getElementById('car-driver').value,
+                driverId: newDriverId,
                 nextService: document.getElementById('car-next-service').value || ''
             };
+
+            // Sync driver assignments
+            let peopleChanged = false;
+
+            // If previously had a different driver, clear that driver's assignedCarId
+            if (oldDriverId && oldDriverId !== newDriverId) {
+                const oldDriver = people.find(p => p.id === oldDriverId);
+                if (oldDriver) {
+                    oldDriver.assignedCarId = '';
+                    if (oldDriver.status === 'working' && !oldDriver.unit && !oldDriver.reference) {
+                        oldDriver.status = 'on-base';
+                    }
+                    peopleChanged = true;
+                }
+            }
+
+            // If assigning a new driver, update that driver's assignedCarId and status
+            if (newDriverId) {
+                const newDriver = people.find(p => p.id === newDriverId);
+                if (newDriver) {
+                    // Clear any previous car assignment for this driver
+                    if (newDriver.assignedCarId && newDriver.assignedCarId !== carData.id) {
+                        const prevCar = cars.find(c => c.id === newDriver.assignedCarId);
+                        if (prevCar) {
+                            prevCar.driverId = '';
+                            if (prevCar.status === 'in-use') {
+                                prevCar.status = 'available';
+                            }
+                        }
+                    }
+                    newDriver.assignedCarId = carData.id;
+                    newDriver.status = 'working';
+                    peopleChanged = true;
+                }
+            }
 
             if (carId) {
                 const index = cars.findIndex(car => car.id === carId);
@@ -1176,6 +1238,13 @@
 
             localStorage.setItem('fleet_cars', JSON.stringify(cars));
             syncToFirebase('cars', cars);
+
+            if (peopleChanged) {
+                localStorage.setItem('fleet_people', JSON.stringify(people));
+                syncToFirebase('people', people);
+                renderPeople();
+            }
+
             closeModal('car');
             renderCars();
             updateStats();
@@ -1284,13 +1353,32 @@
             }
         }
 
-        // Update car dropdown in person form
+        // Update car dropdown in person form with availability status
         function updateCarDropdown() {
             const carSelect = document.getElementById('person-assigned-car');
             const currentValue = carSelect.value;
+            const currentPersonId = document.getElementById('person-id').value;
             carSelect.innerHTML = '<option value="">ללא רכב משויך</option>';
+
             cars.forEach(car => {
-                carSelect.innerHTML += `<option value="${car.id}">צ' ${car.number}</option>`;
+                let statusText = '';
+                let isDisabled = false;
+
+                // Check if car is in maintenance or graded
+                if (car.status === 'maintenance') {
+                    statusText = ' (בתחזוקה)';
+                    isDisabled = true;
+                } else if (car.status === 'graded') {
+                    statusText = ' (מדורג)';
+                    isDisabled = true;
+                } else if (car.driverId && car.driverId !== currentPersonId) {
+                    // Car is assigned to another driver
+                    const assignedDriver = people.find(p => p.id === car.driverId);
+                    statusText = assignedDriver ? ` (משויך ל${assignedDriver.name})` : ' (משויך)';
+                    isDisabled = true;
+                }
+
+                carSelect.innerHTML += `<option value="${car.id}" ${isDisabled ? 'disabled' : ''}>צ' ${car.number}${statusText}</option>`;
             });
             carSelect.value = currentValue;
         }
@@ -1301,17 +1389,48 @@
 
             const personId = document.getElementById('person-id').value;
             const status = document.getElementById('person-status').value;
+            const newAssignedCarId = status === 'working' ? document.getElementById('person-assigned-car').value || '' : '';
+
+            // Get old person data to check previous car assignment
+            const oldPerson = personId ? people.find(p => p.id === personId) : null;
+            const oldAssignedCarId = oldPerson ? oldPerson.assignedCarId || '' : '';
+
             const personData = {
                 id: personId || Date.now().toString(),
                 name: document.getElementById('person-name').value,
                 idNumber: document.getElementById('person-id-number').value,
                 phone: document.getElementById('person-phone').value,
                 status: status,
-                assignedCarId: status === 'working' ? document.getElementById('person-assigned-car').value || '' : '',
+                assignedCarId: newAssignedCarId,
                 unit: status === 'working' ? document.getElementById('person-unit').value || '' : '',
                 reference: status === 'working' ? document.getElementById('person-reference').value || '' : '',
                 referenceEnd: status === 'working' ? document.getElementById('person-reference-end').value || '' : ''
             };
+
+            // Sync car assignments
+            let carsChanged = false;
+
+            // If previously had a different car, clear that car's driverId
+            if (oldAssignedCarId && oldAssignedCarId !== newAssignedCarId) {
+                const oldCar = cars.find(c => c.id === oldAssignedCarId);
+                if (oldCar) {
+                    oldCar.driverId = '';
+                    if (oldCar.status === 'in-use') {
+                        oldCar.status = 'available';
+                    }
+                    carsChanged = true;
+                }
+            }
+
+            // If assigning a new car, update that car's driverId
+            if (newAssignedCarId) {
+                const newCar = cars.find(c => c.id === newAssignedCarId);
+                if (newCar) {
+                    newCar.driverId = personData.id;
+                    newCar.status = 'in-use';
+                    carsChanged = true;
+                }
+            }
 
             if (personId) {
                 const index = people.findIndex(person => person.id === personId);
@@ -1324,6 +1443,13 @@
 
             localStorage.setItem('fleet_people', JSON.stringify(people));
             syncToFirebase('people', people);
+
+            if (carsChanged) {
+                localStorage.setItem('fleet_cars', JSON.stringify(cars));
+                syncToFirebase('cars', cars);
+                renderCars();
+            }
+
             closeModal('person');
             renderPeople();
             updateStats();
