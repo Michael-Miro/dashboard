@@ -236,9 +236,35 @@
             color: white;
         }
 
+        .btn-copy {
+            background: #6c757d;
+            color: white;
+        }
+
         .btn-edit:hover,
-        .btn-delete:hover {
+        .btn-delete:hover,
+        .btn-copy:hover {
             opacity: 0.8;
+        }
+
+        .copy-toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #28a745;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .copy-toast.show {
+            opacity: 1;
         }
 
         /* Modal Styles */
@@ -916,6 +942,9 @@
         </div>
     </div>
 
+    <!-- Copy Toast Notification -->
+    <div class="copy-toast" id="copy-toast">הועתק ללוח!</div>
+
     <script>
         // Initial People Data from images
         const initialPeopleData = [
@@ -1071,6 +1100,114 @@
         // Check if we are on the mobile view
         function isMobile() {
             return window.innerWidth <= 768;
+        }
+
+        // Copy to clipboard with cross-platform support
+        function copyToClipboard(text) {
+            // Try modern Clipboard API first
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text)
+                    .then(() => showCopyToast())
+                    .catch(() => fallbackCopy(text));
+            } else {
+                fallbackCopy(text);
+            }
+        }
+
+        // Fallback for older browsers and iOS
+        function fallbackCopy(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-9999px';
+            textArea.style.top = '0';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                document.execCommand('copy');
+                showCopyToast();
+            } catch (err) {
+                console.error('Copy failed:', err);
+            }
+
+            document.body.removeChild(textArea);
+        }
+
+        // Show toast notification
+        function showCopyToast() {
+            const toast = document.getElementById('copy-toast');
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        // Copy driver card
+        function copyPerson(personId) {
+            const person = people.find(p => p.id === personId);
+            if (!person) return;
+
+            const statusNames = {
+                'on-base': 'בבסיס',
+                'sick': 'במחלה',
+                'refresher': 'רענון',
+                'working': 'בעבודה'
+            };
+
+            const assignedCar = person.assignedCarId ? cars.find(c => c.id === person.assignedCarId) : null;
+
+            let text = `שם: ${person.name}\n`;
+            text += `מספר אישי: ${person.idNumber}\n`;
+            text += `טלפון: ${person.phone}\n`;
+            text += `סטטוס: ${statusNames[person.status || 'on-base']}`;
+
+            if (assignedCar) {
+                text += `\nרכב משויך: צ' ${assignedCar.number}`;
+            }
+            if (person.unit) {
+                text += `\nיחידה / בסיס: ${person.unit}`;
+            }
+            if (person.reference) {
+                text += `\nמספר אסמכתא: ${person.reference}`;
+            }
+            if (person.referenceEnd) {
+                text += `\nסיום אסמכתא: ${person.referenceEnd}`;
+            }
+
+            copyToClipboard(text);
+        }
+
+        // Copy car card
+        function copyCar(carId) {
+            const car = cars.find(c => c.id === carId);
+            if (!car) return;
+
+            const typeNames = { 'freight': 'פרייט', 'inter': 'אינטר' };
+            const cargoNames = { 'cover': 'כיסוי', 'mustang': 'מוסטנג' };
+            const statusNames = {
+                'available': 'זמין',
+                'in-use': 'בשימוש',
+                'maintenance': 'בתחזוקה',
+                'graded': 'מדורג'
+            };
+
+            const driver = car.driverId ? people.find(p => p.id === car.driverId) : null;
+
+            let text = `צ': ${car.number}\n`;
+            text += `סוג: ${typeNames[car.type || 'freight']}\n`;
+            text += `משא: ${cargoNames[car.cargo || 'cover']}\n`;
+            text += `סטטוס: ${statusNames[car.status]}`;
+
+            if (driver) {
+                text += `\nנהג משויך: ${driver.name}`;
+            }
+            if (car.nextService) {
+                text += `\nתאריך טיפול הבא: ${car.nextService}`;
+            }
+
+            copyToClipboard(text);
         }
 
         // Mobile Search Mode Logic
@@ -1332,6 +1469,7 @@
                         <td data-label="טיפול הבא">${car.nextService || '-'}</td>
                         <td>
                             <div class="action-buttons">
+                                <button class="btn-copy" onclick="event.stopPropagation(); copyCar('${car.id}')">העתק</button>
                                 <button class="btn-edit" onclick="event.stopPropagation(); editCar('${car.id}')">עריכה</button>
                                 <button class="btn-delete" onclick="event.stopPropagation(); deleteCar('${car.id}')">מחיקה</button>
                             </div>
@@ -1540,6 +1678,7 @@
                     <td data-label="סיום אסמכתא">${person.referenceEnd || '-'}</td>
                     <td>
                         <div class="action-buttons">
+                            <button class="btn-copy" onclick="event.stopPropagation(); copyPerson('${person.id}')">העתק</button>
                             <button class="btn-edit" onclick="event.stopPropagation(); editPerson('${person.id}')">עריכה</button>
                             <button class="btn-delete" onclick="event.stopPropagation(); deletePerson('${person.id}')">מחיקה</button>
                         </div>
@@ -1673,6 +1812,7 @@
                     <td data-label="סיום אסמכתא">${person.referenceEnd || '-'}</td>
                     <td>
                         <div class="action-buttons">
+                            <button class="btn-copy" onclick="event.stopPropagation(); copyPerson('${person.id}')">העתק</button>
                             <button class="btn-edit" onclick="event.stopPropagation(); editPerson('${person.id}')">עריכה</button>
                             <button class="btn-delete" onclick="event.stopPropagation(); deletePerson('${person.id}')">מחיקה</button>
                         </div>
@@ -1770,6 +1910,7 @@
                         <td data-label="טיפול הבא">${car.nextService || '-'}</td>
                         <td>
                             <div class="action-buttons">
+                                <button class="btn-copy" onclick="event.stopPropagation(); copyCar('${car.id}')">העתק</button>
                                 <button class="btn-edit" onclick="event.stopPropagation(); editCar('${car.id}')">עריכה</button>
                                 <button class="btn-delete" onclick="event.stopPropagation(); deleteCar('${car.id}')">מחיקה</button>
                             </div>
