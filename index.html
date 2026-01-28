@@ -356,6 +356,21 @@
             color: #1e3a5f;
         }
 
+        .stat-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card.active {
+            border: 2px solid #2C97D1;
+            background: #e8f4fc;
+        }
+
         .empty-state {
             text-align: center;
             padding: 60px 20px;
@@ -676,24 +691,24 @@
     <main class="container">
         <!-- Cars Tab -->
         <div id="cars" class="tab-content">
-            <div class="stats-bar">
-                <div class="stat-card">
+            <div class="stats-bar" id="cars-stats-bar">
+                <div class="stat-card" onclick="filterByStatCard('cars', '')">
                     <h3>סה"כ רכבים</h3>
                     <div class="number" id="total-cars">0</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card" onclick="filterByStatCard('cars', 'available')">
                     <h3>זמינים</h3>
                     <div class="number" id="available-cars">0</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card" onclick="filterByStatCard('cars', 'in-use')">
                     <h3>בשימוש</h3>
                     <div class="number" id="inuse-cars">0</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card" onclick="filterByStatCard('cars', 'maintenance')">
                     <h3>בתחזוקה</h3>
                     <div class="number" id="maintenance-cars">0</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card" onclick="filterByStatCard('cars', 'graded')">
                     <h3>מדורג</h3>
                     <div class="number" id="graded-cars">0</div>
                 </div>
@@ -712,7 +727,7 @@
                         <option value="cover">כיסוי</option>
                         <option value="mustang">מוסטנג</option>
                     </select>
-                    <select id="filter-car-status" class="search-box" style="width: 120px;" onchange="filterCars()">
+                    <select id="filter-car-status" class="search-box" style="width: 120px;" onchange="syncCarStatCards(); filterCars()">
                         <option value="">כל הסטטוסים</option>
                         <option value="available">זמין</option>
                         <option value="in-use">בשימוש</option>
@@ -743,24 +758,24 @@
 
         <!-- People Tab -->
         <div id="people" class="tab-content active">
-            <div class="stats-bar">
-                <div class="stat-card">
+            <div class="stats-bar" id="people-stats-bar">
+                <div class="stat-card" onclick="filterByStatCard('people', '')">
                     <h3>סה"כ נהגים</h3>
                     <div class="number" id="total-people">0</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card" onclick="filterByStatCard('people', 'on-base')">
                     <h3>בבסיס</h3>
                     <div class="number" id="people-on-base">0</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card" onclick="filterByStatCard('people', 'sick')">
                     <h3>במחלה</h3>
                     <div class="number" id="people-sick">0</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card" onclick="filterByStatCard('people', 'refresher')">
                     <h3>ברענון</h3>
                     <div class="number" id="people-refresher">0</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card" onclick="filterByStatCard('people', 'working')">
                     <h3>בעבודה</h3>
                     <div class="number" id="people-working">0</div>
                 </div>
@@ -1398,8 +1413,127 @@
             document.getElementById('people-working').textContent = people.filter(p => p.status === 'working').length;
         }
 
+        // Track active stat card filter
+        let activeStatFilter = { cars: '', people: '' };
+
+        // Sync car stat cards with dropdown
+        function syncCarStatCards() {
+            const status = document.getElementById('filter-car-status').value;
+            activeStatFilter.cars = status;
+            const statsBar = document.getElementById('cars-stats-bar');
+            const statCards = statsBar.querySelectorAll('.stat-card');
+            const statuses = ['', 'available', 'in-use', 'maintenance', 'graded'];
+
+            statCards.forEach((card, index) => {
+                card.classList.remove('active');
+                if (statuses[index] === status) {
+                    card.classList.add('active');
+                }
+            });
+        }
+
+        // Filter by stat card click
+        function filterByStatCard(type, status) {
+            const statsBar = document.getElementById(type + '-stats-bar');
+            const statCards = statsBar.querySelectorAll('.stat-card');
+
+            // Update active state on cards
+            statCards.forEach((card, index) => {
+                card.classList.remove('active');
+                // First card is "total", then specific statuses
+                if (type === 'cars') {
+                    const statuses = ['', 'available', 'in-use', 'maintenance', 'graded'];
+                    if (statuses[index] === status) {
+                        card.classList.add('active');
+                    }
+                } else {
+                    const statuses = ['', 'on-base', 'sick', 'refresher', 'working'];
+                    if (statuses[index] === status) {
+                        card.classList.add('active');
+                    }
+                }
+            });
+
+            activeStatFilter[type] = status;
+
+            if (type === 'cars') {
+                // Update the status dropdown to match and trigger filter
+                document.getElementById('filter-car-status').value = status;
+                filterCars();
+            } else {
+                filterPeople();
+            }
+        }
+
+        // Filter people by status
+        function filterPeople() {
+            const searchValue = document.getElementById('search-people').value.toLowerCase();
+            const statusFilter = activeStatFilter.people;
+            const tbody = document.getElementById('people-body');
+
+            const statusNames = {
+                'on-base': 'בבסיס',
+                'sick': 'במחלה',
+                'refresher': 'רענון',
+                'working': 'בעבודה'
+            };
+
+            const statusClasses = {
+                'on-base': 'status-on-base',
+                'sick': 'status-sick',
+                'refresher': 'status-refresher',
+                'working': 'status-working'
+            };
+
+            const filteredPeople = people.filter(person => {
+                const personStatus = person.status || 'on-base';
+                const matchesStatus = !statusFilter || personStatus === statusFilter;
+                const searchText = `${person.name} ${person.idNumber} ${person.phone} ${statusNames[personStatus]} ${person.unit || ''} ${person.reference || ''}`.toLowerCase();
+                const matchesSearch = !searchValue || searchText.includes(searchValue);
+                return matchesStatus && matchesSearch;
+            });
+
+            if (filteredPeople.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8">
+                            <div class="empty-state">
+                                <h3>לא נמצאו נהגים</h3>
+                                <p>נסה לשנות את הסינון</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = filteredPeople.map(person => {
+                const personStatus = person.status || 'on-base';
+                return `
+                <tr onclick="toggleDetails(this)" style="cursor: pointer">
+                    <td data-label=""><strong>${person.name}</strong></td>
+                    <td data-label="מספר אישי">${person.idNumber}</td>
+                    <td data-label="טלפון">${person.phone}</td>
+                    <td data-label="סטטוס"><span class="status-badge ${statusClasses[personStatus]}">${statusNames[personStatus]}</span></td>
+                    <td data-label="יחידה / בסיס">${person.unit || '-'}</td>
+                    <td data-label="מספר אסמכתא">${person.reference || '-'}</td>
+                    <td data-label="סיום אסמכתא">${person.referenceEnd || '-'}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-edit" onclick="event.stopPropagation(); editPerson('${person.id}')">עריכה</button>
+                            <button class="btn-delete" onclick="event.stopPropagation(); deletePerson('${person.id}')">מחיקה</button>
+                        </div>
+                    </td>
+                </tr>
+            `}).join('');
+        }
+
         // Search/Filter
         function filterTable(type) {
+            if (type === 'people') {
+                filterPeople();
+                return;
+            }
             const searchValue = document.getElementById('search-' + type).value.toLowerCase();
             const tbody = document.getElementById(type + '-body');
             const rows = tbody.querySelectorAll('tr');
