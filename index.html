@@ -1064,13 +1064,23 @@
                     }
                 });
 
-                input.addEventListener('blur', () => {
-                    // Small delay to allow clicking results without jumping layout immediately
-                    setTimeout(() => {
-                        document.body.classList.remove('search-mode');
-                    }, 200);
-                });
+                // Don't exit search mode on blur - only exit via the exit button or clearing the input
             });
+        }
+
+        // Exit search mode and clear search input
+        function exitSearchMode() {
+            document.body.classList.remove('search-mode');
+            const activeSearchInput = document.querySelector('.tab-content.active .search-box');
+            if (activeSearchInput) {
+                activeSearchInput.value = '';
+                // Re-render the table to show all results
+                if (activeSearchInput.id === 'search-people') {
+                    filterTable('people');
+                } else if (activeSearchInput.id === 'search-cars') {
+                    filterCars();
+                }
+            }
         }
 
         // Tab Navigation
