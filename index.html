@@ -797,6 +797,7 @@
                         <th>מספר אישי</th>
                         <th>טלפון</th>
                         <th>סטטוס</th>
+                        <th>רכב משויך</th>
                         <th>יחידה / בסיס</th>
                         <th>מספר אסמכתא</th>
                         <th>סיום אסמכתא</th>
@@ -891,6 +892,12 @@
                     </select>
                 </div>
                 <div class="work-fields" id="work-fields">
+                    <div class="form-group">
+                        <label>רכב משויך</label>
+                        <select id="person-assigned-car">
+                            <option value="">ללא רכב משויך</option>
+                        </select>
+                    </div>
                     <div class="form-group">
                         <label>יחידה / בסיס</label>
                         <input type="text" id="person-unit" placeholder="שם היחידה או הבסיס">
@@ -1265,15 +1272,27 @@
             }).join('');
         }
 
-        // Toggle work fields visibility
+        // Toggle work fields visibility and populate car dropdown
         function toggleWorkFields() {
             const status = document.getElementById('person-status').value;
             const workFields = document.getElementById('work-fields');
             if (status === 'working') {
                 workFields.classList.add('active');
+                updateCarDropdown();
             } else {
                 workFields.classList.remove('active');
             }
+        }
+
+        // Update car dropdown in person form
+        function updateCarDropdown() {
+            const carSelect = document.getElementById('person-assigned-car');
+            const currentValue = carSelect.value;
+            carSelect.innerHTML = '<option value="">ללא רכב משויך</option>';
+            cars.forEach(car => {
+                carSelect.innerHTML += `<option value="${car.id}">צ' ${car.number}</option>`;
+            });
+            carSelect.value = currentValue;
         }
 
         // Person Functions
@@ -1288,6 +1307,7 @@
                 idNumber: document.getElementById('person-id-number').value,
                 phone: document.getElementById('person-phone').value,
                 status: status,
+                assignedCarId: status === 'working' ? document.getElementById('person-assigned-car').value || '' : '',
                 unit: status === 'working' ? document.getElementById('person-unit').value || '' : '',
                 reference: status === 'working' ? document.getElementById('person-reference').value || '' : '',
                 referenceEnd: status === 'working' ? document.getElementById('person-reference-end').value || '' : ''
@@ -1322,6 +1342,7 @@
                 document.getElementById('person-reference').value = person.reference || '';
                 document.getElementById('person-reference-end').value = person.referenceEnd || '';
                 toggleWorkFields();
+                document.getElementById('person-assigned-car').value = person.assignedCarId || '';
                 document.getElementById('person-modal').classList.add('active');
             }
         }
@@ -1352,7 +1373,7 @@
             if (people.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="8">
+                        <td colspan="9">
                             <div class="empty-state">
                                 <h3>אין נהגים במערכת</h3>
                                 <p>לחץ על "הוסף נהג" כדי להתחיל</p>
@@ -1379,12 +1400,15 @@
 
             tbody.innerHTML = people.map(person => {
                 const personStatus = person.status || 'on-base';
+                const assignedCar = person.assignedCarId ? cars.find(c => c.id === person.assignedCarId) : null;
+                const carDisplay = assignedCar ? `צ' ${assignedCar.number}` : '-';
                 return `
                 <tr onclick="toggleDetails(this)" style="cursor: pointer">
                     <td data-label=""><strong>${person.name}</strong></td>
                     <td data-label="מספר אישי">${person.idNumber}</td>
                     <td data-label="טלפון">${person.phone}</td>
                     <td data-label="סטטוס"><span class="status-badge ${statusClasses[personStatus]}">${statusNames[personStatus]}</span></td>
+                    <td data-label="רכב משויך">${carDisplay}</td>
                     <td data-label="יחידה / בסיס">${person.unit || '-'}</td>
                     <td data-label="מספר אסמכתא">${person.reference || '-'}</td>
                     <td data-label="סיום אסמכתא">${person.referenceEnd || '-'}</td>
@@ -1496,7 +1520,7 @@
             if (filteredPeople.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="8">
+                        <td colspan="9">
                             <div class="empty-state">
                                 <h3>לא נמצאו נהגים</h3>
                                 <p>נסה לשנות את הסינון</p>
@@ -1509,12 +1533,15 @@
 
             tbody.innerHTML = filteredPeople.map(person => {
                 const personStatus = person.status || 'on-base';
+                const assignedCar = person.assignedCarId ? cars.find(c => c.id === person.assignedCarId) : null;
+                const carDisplay = assignedCar ? `צ' ${assignedCar.number}` : '-';
                 return `
                 <tr onclick="toggleDetails(this)" style="cursor: pointer">
                     <td data-label=""><strong>${person.name}</strong></td>
                     <td data-label="מספר אישי">${person.idNumber}</td>
                     <td data-label="טלפון">${person.phone}</td>
                     <td data-label="סטטוס"><span class="status-badge ${statusClasses[personStatus]}">${statusNames[personStatus]}</span></td>
+                    <td data-label="רכב משויך">${carDisplay}</td>
                     <td data-label="יחידה / בסיס">${person.unit || '-'}</td>
                     <td data-label="מספר אסמכתא">${person.reference || '-'}</td>
                     <td data-label="סיום אסמכתא">${person.referenceEnd || '-'}</td>
