@@ -247,6 +247,20 @@
             opacity: 0.8;
         }
 
+        .bulk-actions-bar {
+            display: none;
+            background: #2C97D1;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            align-items: center;
+            gap: 15px;
+        }
+        .bulk-actions-bar.active { display: flex; }
+        .bulk-edit-btn { background: white; color: #2C97D1; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .bulk-cancel-btn { background: transparent; color: white; border: 1px solid white; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
+
         .copy-toast {
             position: fixed;
             bottom: 20px;
@@ -822,9 +836,16 @@
                 </div>
             </div>
 
+            <div class="bulk-actions-bar" id="bulk-actions-bar">
+                <span><span id="selected-count">0</span> נבחרו</span>
+                <button class="bulk-edit-btn" onclick="openBulkEditModal()">עריכה מרובה</button>
+                <button class="bulk-cancel-btn" onclick="clearBulkSelection()">ביטול</button>
+            </div>
+
             <table class="data-table" id="people-table">
                 <thead>
                     <tr>
+                        <th style="width: 40px;"><input type="checkbox" id="select-all-people" onchange="toggleSelectAllPeople()"></th>
                         <th>שם מלא</th>
                         <th>קבוצה</th>
                         <th>מספר אישי</th>
@@ -958,6 +979,40 @@
         </div>
     </div>
 
+    <!-- Bulk Edit Modal -->
+    <div class="modal" id="bulk-edit-modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>עריכה מרובה</h2>
+                <button class="close-button" onclick="closeBulkEditModal()">&times;</button>
+            </div>
+            <form id="bulk-edit-form" onsubmit="saveBulkEdit(event)">
+                <p style="margin-bottom: 15px;">עורך <strong id="bulk-edit-count">0</strong> נהגים</p>
+                <div class="form-group">
+                    <label>סטטוס</label>
+                    <select id="bulk-status">
+                        <option value="">ללא שינוי</option>
+                        <option value="on-base">בבסיס</option>
+                        <option value="sick">במחלה</option>
+                        <option value="refresher">רענון</option>
+                        <option value="working">בעבודה</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>קבוצה</label>
+                    <select id="bulk-group">
+                        <option value="">ללא שינוי</option>
+                        <option value="none">ללא קבוצה</option>
+                        <option value="A">קבוצה A</option>
+                        <option value="B">קבוצה B</option>
+                        <option value="C">קבוצה C</option>
+                    </select>
+                </div>
+                <button type="submit" class="submit-button">שמור שינויים</button>
+            </form>
+        </div>
+    </div>
+
     <!-- Copy Toast Notification -->
     <div class="copy-toast" id="copy-toast">הועתק ללוח!</div>
 
@@ -1004,6 +1059,7 @@
         // Data Storage
         let cars = JSON.parse(localStorage.getItem('fleet_cars')) || [];
         let people = JSON.parse(localStorage.getItem('fleet_people')) || [];
+        let selectedPeopleIds = [];
 
         // Load initial data only if empty or if data version changed
         const DATA_VERSION = '2';
@@ -1655,7 +1711,7 @@
             if (people.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="10">
+                        <td colspan="11">
                             <div class="empty-state">
                                 <h3>אין נהגים במערכת</h3>
                                 <p>לחץ על "הוסף נהג" כדי להתחיל</p>
@@ -1686,6 +1742,7 @@
                 const carDisplay = assignedCar ? `צ' ${assignedCar.number}` : '-';
                 return `
                 <tr onclick="toggleDetails(this)" style="cursor: pointer">
+                    <td onclick="event.stopPropagation()"><input type="checkbox" class="person-checkbox" data-id="${person.id}" onchange="updateBulkSelection()"></td>
                     <td data-label=""><strong>${person.name}</strong></td>
                     <td data-label="קבוצה">${person.group || '-'}</td>
                     <td data-label="מספר אישי">${person.idNumber}</td>
@@ -1806,7 +1863,7 @@
             if (filteredPeople.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="10">
+                        <td colspan="11">
                             <div class="empty-state">
                                 <h3>לא נמצאו נהגים</h3>
                                 <p>נסה לשנות את הסינון</p>
@@ -1823,6 +1880,7 @@
                 const carDisplay = assignedCar ? `צ' ${assignedCar.number}` : '-';
                 return `
                 <tr onclick="toggleDetails(this)" style="cursor: pointer">
+                    <td onclick="event.stopPropagation()"><input type="checkbox" class="person-checkbox" data-id="${person.id}" onchange="updateBulkSelection()"></td>
                     <td data-label=""><strong>${person.name}</strong></td>
                     <td data-label="קבוצה">${person.group || '-'}</td>
                     <td data-label="מספר אישי">${person.idNumber}</td>
@@ -2007,6 +2065,101 @@
         function toggleDetails(row) {
             // Only toggle on mobile (check window width or simply always toggle class, class only affects mobile via CSS media query)
             row.classList.toggle('expanded');
+        }
+
+        // Bulk Selection Functions
+        function toggleSelectAllPeople() {
+            const selectAll = document.getElementById('select-all-people');
+            const checkboxes = document.querySelectorAll('.person-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = selectAll.checked;
+            });
+            updateBulkSelection();
+        }
+
+        function updateBulkSelection() {
+            const checkboxes = document.querySelectorAll('.person-checkbox:checked');
+            selectedPeopleIds = Array.from(checkboxes).map(cb => cb.dataset.id);
+            const bulkBar = document.getElementById('bulk-actions-bar');
+            if (selectedPeopleIds.length > 0) {
+                bulkBar.classList.add('active');
+                document.getElementById('selected-count').textContent = selectedPeopleIds.length;
+            } else {
+                bulkBar.classList.remove('active');
+            }
+        }
+
+        function openBulkEditModal() {
+            document.getElementById('bulk-status').value = '';
+            document.getElementById('bulk-group').value = '';
+            document.getElementById('bulk-edit-count').textContent = selectedPeopleIds.length;
+            document.getElementById('bulk-edit-modal').classList.add('active');
+        }
+
+        function closeBulkEditModal() {
+            document.getElementById('bulk-edit-modal').classList.remove('active');
+        }
+
+        function saveBulkEdit(event) {
+            event.preventDefault();
+            const newStatus = document.getElementById('bulk-status').value;
+            const newGroup = document.getElementById('bulk-group').value;
+
+            if (!newStatus && !newGroup) {
+                alert('בחר לפחות שדה אחד לעדכון');
+                return;
+            }
+
+            let carsChanged = false;
+
+            selectedPeopleIds.forEach(personId => {
+                const person = people.find(p => p.id === personId);
+                if (!person) return;
+
+                if (newStatus) {
+                    // If changing FROM working status, clear car assignment
+                    if (person.status === 'working' && newStatus !== 'working') {
+                        if (person.assignedCarId) {
+                            const car = cars.find(c => c.id === person.assignedCarId);
+                            if (car) {
+                                car.driverId = '';
+                                car.status = 'available';
+                                carsChanged = true;
+                            }
+                        }
+                        person.assignedCarId = '';
+                        person.unit = '';
+                        person.reference = '';
+                        person.referenceEnd = '';
+                    }
+                    person.status = newStatus;
+                }
+
+                if (newGroup) {
+                    person.group = newGroup === 'none' ? '' : newGroup;
+                }
+            });
+
+            localStorage.setItem('fleet_people', JSON.stringify(people));
+            syncToFirebase('people', people);
+
+            if (carsChanged) {
+                localStorage.setItem('fleet_cars', JSON.stringify(cars));
+                syncToFirebase('cars', cars);
+                renderCars();
+            }
+
+            closeBulkEditModal();
+            clearBulkSelection();
+            renderPeople();
+            updateStats();
+        }
+
+        function clearBulkSelection() {
+            selectedPeopleIds = [];
+            document.getElementById('select-all-people').checked = false;
+            document.querySelectorAll('.person-checkbox').forEach(cb => cb.checked = false);
+            document.getElementById('bulk-actions-bar').classList.remove('active');
         }
 
         // Close modal when clicking outside
