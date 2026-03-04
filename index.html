@@ -809,6 +809,12 @@
 
             <div class="actions-bar">
                 <button class="add-button" onclick="openModal('person')">+ הוסף נהג</button>
+                <select id="filter-people-group" onchange="filterPeople()" style="padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px;">
+                    <option value="">כל הקבוצות</option>
+                    <option value="A">קבוצה A</option>
+                    <option value="B">קבוצה B</option>
+                    <option value="C">קבוצה C</option>
+                </select>
                 <div class="search-container">
                     <input type="text" class="search-box" placeholder="חיפוש נהג..." id="search-people"
                         oninput="filterTable('people')">
@@ -820,6 +826,7 @@
                 <thead>
                     <tr>
                         <th>שם מלא</th>
+                        <th>קבוצה</th>
                         <th>מספר אישי</th>
                         <th>טלפון</th>
                         <th>סטטוס</th>
@@ -915,6 +922,15 @@
                         <option value="sick">במחלה</option>
                         <option value="refresher">רענון</option>
                         <option value="working">בעבודה</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>קבוצה</label>
+                    <select id="person-group">
+                        <option value="">ללא קבוצה</option>
+                        <option value="A">קבוצה A</option>
+                        <option value="B">קבוצה B</option>
+                        <option value="C">קבוצה C</option>
                     </select>
                 </div>
                 <div class="work-fields" id="work-fields">
@@ -1539,6 +1555,7 @@
                 idNumber: document.getElementById('person-id-number').value,
                 phone: document.getElementById('person-phone').value,
                 status: status,
+                group: document.getElementById('person-group').value || '',
                 assignedCarId: newAssignedCarId,
                 unit: status === 'working' ? document.getElementById('person-unit').value || '' : '',
                 reference: status === 'working' ? document.getElementById('person-reference').value || '' : '',
@@ -1602,6 +1619,7 @@
                 document.getElementById('person-id-number').value = person.idNumber;
                 document.getElementById('person-phone').value = person.phone;
                 document.getElementById('person-status').value = person.status || 'on-base';
+                document.getElementById('person-group').value = person.group || '';
                 document.getElementById('person-unit').value = person.unit || '';
                 document.getElementById('person-reference').value = person.reference || '';
                 document.getElementById('person-reference-end').value = person.referenceEnd || '';
@@ -1637,7 +1655,7 @@
             if (people.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="9">
+                        <td colspan="10">
                             <div class="empty-state">
                                 <h3>אין נהגים במערכת</h3>
                                 <p>לחץ על "הוסף נהג" כדי להתחיל</p>
@@ -1669,6 +1687,7 @@
                 return `
                 <tr onclick="toggleDetails(this)" style="cursor: pointer">
                     <td data-label=""><strong>${person.name}</strong></td>
+                    <td data-label="קבוצה">${person.group || '-'}</td>
                     <td data-label="מספר אישי">${person.idNumber}</td>
                     <td data-label="טלפון">${person.phone}</td>
                     <td data-label="סטטוס"><span class="status-badge ${statusClasses[personStatus]}">${statusNames[personStatus]}</span></td>
@@ -1758,6 +1777,7 @@
         function filterPeople() {
             const searchValue = document.getElementById('search-people').value.toLowerCase();
             const statusFilter = activeStatFilter.people;
+            const groupFilter = document.getElementById('filter-people-group').value;
             const tbody = document.getElementById('people-body');
 
             const statusNames = {
@@ -1777,15 +1797,16 @@
             const filteredPeople = people.filter(person => {
                 const personStatus = person.status || 'on-base';
                 const matchesStatus = !statusFilter || personStatus === statusFilter;
-                const searchText = `${person.name} ${person.idNumber} ${person.phone} ${statusNames[personStatus]} ${person.unit || ''} ${person.reference || ''}`.toLowerCase();
+                const matchesGroup = !groupFilter || (person.group || '') === groupFilter;
+                const searchText = `${person.name} ${person.idNumber} ${person.phone} ${statusNames[personStatus]} ${person.unit || ''} ${person.reference || ''} ${person.group || ''}`.toLowerCase();
                 const matchesSearch = !searchValue || searchText.includes(searchValue);
-                return matchesStatus && matchesSearch;
+                return matchesStatus && matchesGroup && matchesSearch;
             });
 
             if (filteredPeople.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="9">
+                        <td colspan="10">
                             <div class="empty-state">
                                 <h3>לא נמצאו נהגים</h3>
                                 <p>נסה לשנות את הסינון</p>
@@ -1803,6 +1824,7 @@
                 return `
                 <tr onclick="toggleDetails(this)" style="cursor: pointer">
                     <td data-label=""><strong>${person.name}</strong></td>
+                    <td data-label="קבוצה">${person.group || '-'}</td>
                     <td data-label="מספר אישי">${person.idNumber}</td>
                     <td data-label="טלפון">${person.phone}</td>
                     <td data-label="סטטוס"><span class="status-badge ${statusClasses[personStatus]}">${statusNames[personStatus]}</span></td>
