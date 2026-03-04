@@ -259,6 +259,7 @@
         }
         .bulk-actions-bar.active { display: flex; }
         .bulk-edit-btn { background: white; color: #2C97D1; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .bulk-copy-btn { background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; }
         .bulk-cancel-btn { background: transparent; color: white; border: 1px solid white; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
 
         .copy-toast {
@@ -850,6 +851,7 @@
             <div class="bulk-actions-bar" id="bulk-actions-bar">
                 <span><span id="selected-count">0</span> נבחרו</span>
                 <button class="bulk-edit-btn" onclick="openBulkEditModal()">עריכה מרובה</button>
+                <button class="bulk-copy-btn" onclick="bulkCopyPeople()">העתק הכל</button>
                 <button class="bulk-cancel-btn" onclick="clearBulkSelection()">ביטול</button>
             </div>
 
@@ -2081,7 +2083,8 @@
         // Bulk Selection Functions
         function toggleSelectAllPeople() {
             const selectAll = document.getElementById('select-all-people');
-            const checkboxes = document.querySelectorAll('.person-checkbox');
+            // Only select visible checkboxes (in visible rows)
+            const checkboxes = document.querySelectorAll('#people-body tr:not([style*="display: none"]) .person-checkbox');
             checkboxes.forEach(cb => {
                 cb.checked = selectAll.checked;
             });
@@ -2171,6 +2174,34 @@
             document.getElementById('select-all-people').checked = false;
             document.querySelectorAll('.person-checkbox').forEach(cb => cb.checked = false);
             document.getElementById('bulk-actions-bar').classList.remove('active');
+        }
+
+        function bulkCopyPeople() {
+            const statusNames = {
+                'on-base': 'בבסיס',
+                'sick': 'במחלה',
+                'refresher': 'רענון',
+                'working': 'בעבודה'
+            };
+
+            const selectedPeople = selectedPeopleIds.map(id => people.find(p => p.id === id)).filter(p => p);
+
+            const textParts = selectedPeople.map(person => {
+                const assignedCar = person.assignedCarId ? cars.find(c => c.id === person.assignedCarId) : null;
+                let text = `שם: ${person.name}\n`;
+                text += `מספר אישי: ${person.idNumber}\n`;
+                text += `טלפון: ${person.phone}\n`;
+                text += `סטטוס: ${statusNames[person.status || 'on-base']}`;
+                if (person.group) text += `\nקבוצה: ${person.group}`;
+                if (assignedCar) text += `\nרכב משויך: צ' ${assignedCar.number}`;
+                if (person.unit) text += `\nיחידה / בסיס: ${person.unit}`;
+                if (person.reference) text += `\nמספר אסמכתא: ${person.reference}`;
+                if (person.referenceEnd) text += `\nסיום אסמכתא: ${person.referenceEnd}`;
+                return text;
+            });
+
+            const fullText = textParts.join('\n\n---\n\n');
+            copyToClipboard(fullText);
         }
 
         // Close modal when clicking outside
