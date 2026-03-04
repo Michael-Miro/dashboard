@@ -261,6 +261,26 @@
         .bulk-edit-btn { background: white; color: #2C97D1; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; }
         .bulk-copy-btn { background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; }
         .bulk-cancel-btn { background: transparent; color: white; border: 1px solid white; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
+        .mobile-select-all { display: none; }
+        @media (max-width: 768px) {
+            .mobile-select-all {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                margin-bottom: 10px;
+                padding: 10px 15px;
+                background: #f8f9fa;
+                border-radius: 8px;
+            }
+            .mobile-select-all label {
+                font-weight: 500;
+                color: #1e3a5f;
+            }
+            .mobile-select-all input[type="checkbox"] {
+                width: 20px;
+                height: 20px;
+            }
+        }
 
         .copy-toast {
             position: fixed;
@@ -558,13 +578,14 @@
 
             /* Always visible columns */
             .data-table td:first-child {
-                display: block;
-                max-height: none;
-                opacity: 1;
+                display: flex !important;
+                max-height: none !important;
+                opacity: 1 !important;
                 width: auto;
                 order: 1;
                 padding: 0;
                 min-width: 30px;
+                align-items: center;
             }
 
             .data-table td:nth-child(2) {
@@ -853,6 +874,11 @@
                 <button class="bulk-edit-btn" onclick="openBulkEditModal()">עריכה מרובה</button>
                 <button class="bulk-copy-btn" onclick="bulkCopyPeople()">העתק הכל</button>
                 <button class="bulk-cancel-btn" onclick="clearBulkSelection()">ביטול</button>
+            </div>
+
+            <div class="mobile-select-all">
+                <input type="checkbox" id="mobile-select-all-people" onchange="toggleSelectAllPeople()">
+                <label for="mobile-select-all-people">בחר את כל הנהגים המוצגים</label>
             </div>
 
             <table class="data-table" id="people-table">
@@ -2082,11 +2108,19 @@
 
         // Bulk Selection Functions
         function toggleSelectAllPeople() {
-            const selectAll = document.getElementById('select-all-people');
+            // Get checked state from whichever checkbox triggered this
+            const desktopCheckbox = document.getElementById('select-all-people');
+            const mobileCheckbox = document.getElementById('mobile-select-all-people');
+            const isChecked = desktopCheckbox.checked || mobileCheckbox.checked;
+
+            // Sync both checkboxes
+            desktopCheckbox.checked = isChecked;
+            mobileCheckbox.checked = isChecked;
+
             // Only select visible checkboxes (in visible rows)
             const checkboxes = document.querySelectorAll('#people-body tr:not([style*="display: none"]) .person-checkbox');
             checkboxes.forEach(cb => {
-                cb.checked = selectAll.checked;
+                cb.checked = isChecked;
             });
             updateBulkSelection();
         }
@@ -2172,6 +2206,7 @@
         function clearBulkSelection() {
             selectedPeopleIds = [];
             document.getElementById('select-all-people').checked = false;
+            document.getElementById('mobile-select-all-people').checked = false;
             document.querySelectorAll('.person-checkbox').forEach(cb => cb.checked = false);
             document.getElementById('bulk-actions-bar').classList.remove('active');
         }
