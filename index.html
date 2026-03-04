@@ -563,19 +563,28 @@
                 width: auto;
                 order: 1;
                 padding: 0;
-                font-weight: 600;
-                color: #1e3a5f;
-                min-width: 60px;
+                min-width: 30px;
             }
 
-            .data-table td:nth-child(4) {
+            .data-table td:nth-child(2) {
                 display: block;
                 max-height: none;
                 opacity: 1;
                 width: auto;
                 order: 2;
+                padding: 0;
+                font-weight: 600;
+                color: #1e3a5f;
+                min-width: 60px;
+            }
+
+            .data-table td:nth-child(5) {
+                display: block;
+                max-height: none;
+                opacity: 1;
+                width: auto;
+                order: 3;
                 margin-right: 0;
-                /* Removed auto margin that was pushing it to the far side */
                 padding: 0;
             }
 
@@ -584,7 +593,7 @@
                 max-height: none;
                 opacity: 1;
                 width: auto;
-                order: 3;
+                order: 4;
                 margin-right: 0;
                 padding: 0;
                 gap: 5px;
@@ -601,7 +610,8 @@
 
             /* Hide labels for always-visible columns */
             .data-table td:first-child::before,
-            .data-table td:nth-child(4):::before,
+            .data-table td:nth-child(2)::before,
+            .data-table td:nth-child(5)::before,
             .data-table td:last-child::before {
                 display: none;
             }
@@ -623,7 +633,8 @@
 
             /* Ensure always-visible cells don't get expanded styling */
             .data-table tr.expanded td:first-child,
-            .data-table tr.expanded td:nth-child(4),
+            .data-table tr.expanded td:nth-child(2),
+            .data-table tr.expanded td:nth-child(5),
             .data-table tr.expanded td:last-child {
                 max-height: none;
                 padding: 0;
