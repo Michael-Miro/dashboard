@@ -8,6 +8,7 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <style>
         * {
             margin: 0;
@@ -745,14 +746,117 @@
                 flex: 1;
             }
         }
+
+        #login-screen {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #2C97D1 0%, #1A5F85 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .login-box {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            width: 320px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+
+        .login-logo {
+            height: 70px;
+            margin-bottom: 16px;
+        }
+
+        .login-box h2 {
+            font-size: 20px;
+            color: #1A5F85;
+            margin-bottom: 24px;
+            font-weight: 700;
+        }
+
+        .login-box input[type="password"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+            text-align: center;
+            direction: ltr;
+            margin-bottom: 8px;
+            box-sizing: border-box;
+        }
+
+        .login-error {
+            color: #e53e3e;
+            font-size: 14px;
+            min-height: 20px;
+            margin-bottom: 8px;
+        }
+
+        .login-box button[type="submit"] {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #2C97D1 0%, #1A5F85 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .login-box button[type="submit"]:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .header-content {
+            justify-content: space-between;
+        }
+
+        .logout-btn {
+            padding: 8px 18px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.5);
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-right: auto;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.35);
+        }
     </style>
 </head>
 
 <body>
+    <!-- Login Screen -->
+    <div id="login-screen" style="display:none">
+        <div class="login-box">
+            <img src="./logo.png" alt="Logo" class="login-logo">
+            <h2>פלוגה ב' - מחלקה 3</h2>
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <input type="password" id="login-password" placeholder="סיסמה" required autocomplete="current-password">
+                <p id="login-error" class="login-error"></p>
+                <button type="submit" id="login-btn">כניסה</button>
+            </form>
+        </div>
+    </div>
+
     <header class="header">
         <div class="header-content">
             <img src="./logo.png" alt="Logo" class="logo">
             <h1>פלוגה ב' - מחלקה 3</h1>
+            <button id="logout-btn" class="logout-btn" onclick="handleLogout()" style="display:none">יציאה</button>
         </div>
     </header>
 
@@ -1123,15 +1227,63 @@
         let firebaseEnabled = false;
         let database = null;
 
+        const SHARED_EMAIL = 'team@fleet.com';
+
+        function showDashboard() {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('logout-btn').style.display = '';
+            document.querySelector('header.header').style.display = '';
+            document.querySelector('nav.tabs').style.display = '';
+            document.querySelector('main.container').style.display = '';
+        }
+
+        function showLoginScreen() {
+            document.getElementById('login-screen').style.display = 'flex';
+            document.getElementById('logout-btn').style.display = 'none';
+            document.querySelector('header.header').style.display = 'none';
+            document.querySelector('nav.tabs').style.display = 'none';
+            document.querySelector('main.container').style.display = 'none';
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+            const password = document.getElementById('login-password').value;
+            const loginBtn = document.getElementById('login-btn');
+            const loginError = document.getElementById('login-error');
+
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'מתחבר...';
+            loginError.textContent = '';
+
+            firebase.auth().signInWithEmailAndPassword(SHARED_EMAIL, password)
+                .catch(() => {
+                    loginError.textContent = 'סיסמה שגויה. נסה שנית.';
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'כניסה';
+                });
+        }
+
+        function handleLogout() {
+            firebase.auth().signOut();
+        }
+
         function initFirebase() {
             try {
                 if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
                     firebase.initializeApp(firebaseConfig);
                     database = firebase.database();
                     firebaseEnabled = true;
-                    setupFirebaseListeners();
                     updateSyncStatus('מחובר', 'green');
                     console.log('Firebase initialized successfully');
+
+                    firebase.auth().onAuthStateChanged(user => {
+                        if (user) {
+                            showDashboard();
+                            setupFirebaseListeners();
+                        } else {
+                            showLoginScreen();
+                        }
+                    });
                 } else {
                     updateSyncStatus('לא מוגדר', 'orange');
                     console.log('Firebase not configured - using localStorage only');
@@ -1200,6 +1352,11 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function () {
+            // Hide dashboard until auth confirmed
+            document.querySelector('header.header').style.display = 'none';
+            document.querySelector('nav.tabs').style.display = 'none';
+            document.querySelector('main.container').style.display = 'none';
+
             initFirebase();
             renderCars();
             renderPeople();
